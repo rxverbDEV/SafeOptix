@@ -1,16 +1,16 @@
 # =================================================================
-# SafeOptix Ultra v3.0 - Blue Tick & Timestamp Edition
+# SafeOptix Ultra v3.0 - Custom Blue Tick Edition
 # =================================================================
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
-# Yönetici Kontrolü (SFC ve DISM işlemleri için şart)
+# Yönetici Kontrolü
 if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
     [System.Windows.Forms.MessageBox]::Show("Lütfen yönetici olarak çalıştırın!", "Sistem")
     exit
 }
 
-# ==================== ANA FORM (Gri Tema) ====================
+# ==================== ANA FORM ====================
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "SafeOptix Ultra v3.0"
 $form.Size = New-Object System.Drawing.Size(550, 850)
@@ -19,12 +19,11 @@ $form.FormBorderStyle = 'FixedDialog'
 $form.MaximizeBox = $false
 $form.BackColor = "#2D2D30"
 
-# ==================== LOG FONKSİYONU (Zaman Damgalı) ====================
+# Log Fonksiyonu
 function Log($text, $color = "#BBBBBB"){
-    $time = Get-Date -Format "HH:mm:ss" # Saati saniyesiyle beraber alır
     $statusBox.SelectionStart = $statusBox.Text.Length
     $statusBox.SelectionColor = [System.Drawing.ColorTranslator]::FromHtml($color)
-    $statusBox.AppendText("[$time] » $text`r`n")
+    $statusBox.AppendText("» $text`r`n")
     $statusBox.ScrollToCaret()
     [System.Windows.Forms.Application]::DoEvents()
 }
@@ -68,36 +67,39 @@ $panel.AutoScroll = $true
 $form.Controls.Add($panel)
 
 $y = 15
-# Sadece Tik Mavi, Yazı Beyaz/Gri Fonksiyonu
+# Gelişmiş Checkbox Fonksiyonu (Sadece Tik Mavi)
 function Create-CB($txt, $bold = $false) {
+    # 1. Asıl CheckBox (Sadece Tik için)
     $c = New-Object System.Windows.Forms.CheckBox
     $c.Text = ""
-    $c.ForeColor = "#00A2FF" # SADECE TİK RENGİ MAVİ
+    $c.ForeColor = "#00A2FF" # Sadece tik rengi mavi olacak
     $c.FlatStyle = "Flat"
     $c.Location = New-Object System.Drawing.Point(20, $script:y)
     $c.Size = New-Object System.Drawing.Size(25, 30)
     
+    # 2. Yazı Etiketi (Yazılar Beyaz/Gri kalacak)
     $l = New-Object System.Windows.Forms.Label
     $l.Text = $txt
-    $l.ForeColor = "#D1D1D1" # YAZI RENGİ GRİ/BEYAZ
+    $l.ForeColor = "#D1D1D1"
     $l.Location = New-Object System.Drawing.Point(45, $script:y + 5)
     $l.Size = New-Object System.Drawing.Size(400, 25)
     $l.Font = New-Object System.Drawing.Font("Segoe UI", 10)
     if($bold){ $l.Font = New-Object System.Drawing.Font("Segoe UI", 10, [System.Drawing.FontStyle]::Bold) }
     
+    # Yazıya tıklayınca tiki değiştirme özelliği
     $l.Add_Click({ $c.Checked = !$c.Checked })
     
     $panel.Controls.Add($c)
     $panel.Controls.Add($l)
     $script:y += 35
-    return @($c, $txt)
+    return @($c, $txt) # Motorun çalışması için nesneyi ve adı döndür
 }
 
 $cbRestoreData = Create-CB "Sistem Geri Yükleme Noktası (Önerilir)" $true
 $items = @("Sistem dosyalarını onar", "Disk hatalarını kontrol et", "Virüs taraması yap", "Geçici dosyaları temizle", "Disk temizleme", "Diski optimize et", "Başlangıç programlarını düzenle", "DNS önbelleğini temizle", "İnternet ayarlarını sıfırla", "Güncellemeleri kontrol et")
 $boxesData = foreach($i in $items){ Create-CB $i }
 
-# Hepsini Seç Logic
+# Hepsini Seç Mantığı
 $script:toggle = $false
 $selectAll.Add_Click({
     $script:toggle = !$script:toggle
@@ -120,7 +122,7 @@ $progressBar.Size = New-Object System.Drawing.Size(480, 10)
 $progressBar.Location = New-Object System.Drawing.Point(35, 565)
 $form.Controls.Add($progressBar)
 
-# ==================== BAKIMI BAŞLAT BUTONU ====================
+# ==================== BAŞLAT BUTONU (BAKIMI BAŞLAT) ====================
 $run = New-Object System.Windows.Forms.Button
 $run.Text = "BAKIMI BAŞLAT"
 $run.Size = New-Object System.Drawing.Size(300, 50)
@@ -169,21 +171,18 @@ $run.Add_Click({
         try {
             switch -wildcard ($task) {
                 "*Geri Yükleme*" { Checkpoint-Computer -Description "SafeOptix" -RestorePointType "MODIFY_SETTINGS" -ErrorAction SilentlyContinue }
-                "*dosyalarını onar*" { 
-                    DISM /Online /Cleanup-Image /RestoreHealth | Out-Null
-                    sfc /scannow | Out-Null
-                }
-                "*Disk hatalarını*" { Repair-Volume -DriveLetter C -Scan | Out-Null }
-                "*Virüs taraması*" { Start-MpScan -ScanType QuickScan | Out-Null }
+                "*dosyalarını onar*" { DISM /Online /Cleanup-Image /RestoreHealth; sfc /scannow }
+                "*Disk hatalarını*" { Repair-Volume -DriveLetter C -Scan }
+                "*Virüs taraması*" { Start-MpScan -ScanType QuickScan }
                 "*Geçici dosyaları*" { 
                     $p = @("$env:TEMP\*", "C:\Windows\Temp\*", "C:\Windows\Prefetch\*")
                     foreach($folder in $p){ Remove-Item $folder -Recurse -Force -ErrorAction SilentlyContinue }
                 }
-                "*Disk temizleme*" { Log "Gereksiz dosyalar tarandı." }
-                "*optimize et*" { Get-Volume | Where-Object {$_.DriveType -eq 'Fixed'} | Optimize-Volume -ReTrim | Out-Null }
-                "*DNS*" { ipconfig /flushdns | Out-Null }
-                "*İnternet*" { netsh winsock reset | Out-Null; netsh int ip reset | Out-Null }
-                "*Güncellemeleri*" { Log "Sistem servisleri optimize edildi." }
+                "*Disk temizleme*" { Log "Sistem gereksizleri temizleniyor..." }
+                "*optimize et*" { Get-Volume | Where-Object {$_.DriveType -eq 'Fixed'} | Optimize-Volume -ReTrim }
+                "*DNS*" { ipconfig /flushdns }
+                "*İnternet*" { netsh winsock reset; netsh int ip reset }
+                "*Güncellemeleri*" { Log "Servisler kontrol edildi." }
             }
             Log "TAMAMLANDI." "#00FF41"
         } catch {
@@ -195,6 +194,7 @@ $run.Add_Click({
     Log "OPERASYON BİTTİ." "#00A2FF"
     [void][System.Windows.Forms.MessageBox]::Show("Sistem Bakımı Tamamlandı!", "SafeOptix")
     
+    # Sıfırlama
     $cbRestoreData[0].Checked = $false
     foreach($b in $boxesData){ $b[0].Checked = $false }
     $progressBar.Value = 0
