@@ -3,8 +3,8 @@ Add-Type -AssemblyName System.Drawing
 
 # ==================== FORM ====================
 $form = New-Object System.Windows.Forms.Form
-$form.Text = "MaintainX - Windows Bakım"
-$form.Size = New-Object System.Drawing.Size(650,850)
+$form.Text = "SafeOptix - Windows Bakım"
+$form.Size = New-Object System.Drawing.Size(650,900)
 $form.StartPosition = "CenterScreen"
 $form.FormBorderStyle = 'FixedDialog'
 $form.MaximizeBox = $false
@@ -12,22 +12,14 @@ $form.BackColor = "#121212"
 
 # ==================== LOG FUNCTION ====================
 function Log($text) {
-    if ($statusBox.InvokeRequired) {
-        $statusBox.Invoke([action[string]]{ param($t)
-            $statusBox.AppendText($t + "`r`n")
-            $statusBox.SelectionStart = $statusBox.Text.Length
-            $statusBox.ScrollToCaret()
-        }, $text)
-    } else {
-        $statusBox.AppendText($text + "`r`n")
-        $statusBox.SelectionStart = $statusBox.Text.Length
-        $statusBox.ScrollToCaret()
-    }
+    $statusBox.AppendText($text + "`r`n")
+    $statusBox.SelectionStart = $statusBox.Text.Length
+    $statusBox.ScrollToCaret()
 }
 
 # ==================== TITLE ====================
 $title = New-Object System.Windows.Forms.Label
-$title.Text = "MaintainX"
+$title.Text = "SafeOptix"
 $title.Font = New-Object System.Drawing.Font("Segoe UI",24,[System.Drawing.FontStyle]::Bold)
 $title.ForeColor = "#0A84FF"
 $title.AutoSize = $true
@@ -97,7 +89,7 @@ $form.Controls.Add($run)
 # ==================== STATUS BOX ====================
 $statusBox=New-Object System.Windows.Forms.TextBox
 $statusBox.Multiline=$true
-$statusBox.Size=New-Object System.Drawing.Size(580,180)
+$statusBox.Size=New-Object System.Drawing.Size(580,200)
 $statusBox.Location=New-Object System.Drawing.Point(30,720)
 $statusBox.BackColor="#111111"
 $statusBox.ForeColor="LightGray"
@@ -145,78 +137,69 @@ function StartupSec {
 $run.Add_Click({
     $run.Enabled=$false
 
-    $job = Start-Job -ScriptBlock {
-        param($cbRestore,$boxes)
+    # ================= SIRALI ÇALIŞTIR =================
+    $allTasks = @()
+    if($cbRestore.Checked){$allTasks+=$cbRestore}
+    $allTasks += $boxes | Where-Object {$_.Checked}
 
-        $output=@()
-
-        # Geri yükleme noktası
-        if($cbRestore.Checked){
-            try{
-                Checkpoint-Computer -Description "MaintainX Öncesi Bakım" -RestorePointType "MODIFY_SETTINGS"
-                $output+="✔ Geri yükleme noktası oluşturuldu"
-            }catch{
-                $output+="❌ Geri yükleme noktası oluşturulamadı"
-            }
-        }
-
-        foreach($b in $boxes){
-            if($b.Checked){
-                $output+="▶ $($b.Text)"
-                try{
-                    switch($b.Text){
-                        "Sistem dosyalarını onar"{
-                            DISM /Online /Cleanup-Image /RestoreHealth
-                            sfc /scannow
-                        }
-                        "Disk hatalarını kontrol et"{
-                            $drives=Get-Volume | Where-Object {$_.DriveType -eq 'Fixed'}
-                            foreach($d in $drives){ chkdsk $d.DriveLetter /f /r /x }
-                        }
-                        "Virüs taraması yap"{ Start-MpScan -ScanType FullScan }
-                        "Geçici dosyaları temizle"{
-                            $paths=@("$env:TEMP","C:\Windows\Temp","$env:LOCALAPPDATA\Temp")
-                            foreach($p in $paths){
-                                if(Test-Path $p){
-                                    Get-ChildItem $p -Recurse -Force -ErrorAction SilentlyContinue | ForEach-Object {
-                                        try{ Remove-Item $_.FullName -Force -Recurse -ErrorAction Stop } catch{}
-                                    }
-                                }
+    foreach($task in $allTasks){
+        Log "▶ $($task.Text)"
+        try{
+            switch($task.Text){
+                "Geri Yükleme Noktası Oluştur (Önerilir)"{
+                    Checkpoint-Computer -Description "SafeOptix Öncesi Bakım" -RestorePointType "MODIFY_SETTINGS"
+                    Log "✔ Geri yükleme noktası oluşturuldu"
+                }
+                "Sistem dosyalarını onar"{
+                    DISM /Online /Cleanup-Image /RestoreHealth
+                    sfc /scannow
+                    Log "✔ Sistem dosyaları onarıldı"
+                }
+                "Disk hatalarını kontrol et"{
+                    $drives=Get-Volume | Where-Object {$_.DriveType -eq 'Fixed'}
+                    foreach($d in $drives){
+                        chkdsk $d.DriveLetter /f /r /x
+                        Log "✔ Disk $($d.DriveLetter) kontrol edildi"
+                    }
+                }
+                "Virüs taraması yap"{ Start-MpScan -ScanType FullScan; Log "✔ Virüs taraması tamamlandı" }
+                "Geçici dosyaları temizle"{
+                    $paths=@("$env:TEMP","C:\Windows\Temp","$env:LOCALAPPDATA\Temp")
+                    foreach($p in $paths){
+                        if(Test-Path $p){
+                            Get-ChildItem $p -Recurse -Force -ErrorAction SilentlyContinue | ForEach-Object {
+                                try{ Remove-Item $_.FullName -Force -Recurse -ErrorAction Stop } catch{}
                             }
                         }
-                        "Disk temizleme"{ cleanmgr /sagerun:1 }
-                        "Diski optimize et"{
-                            $vols=Get-Volume | Where-Object {$_.DriveType -eq 'Fixed'}
-                            foreach($v in $vols){ try{ Optimize-Volume -DriveLetter $v.DriveLetter -ReTrim } catch{} }
-                        }
-                        "Başlangıç programlarını düzenle"{
-                            $sec=StartupSec
-                            foreach($s in $sec){ try{ Get-CimInstance Win32_StartupCommand | Where-Object {$_.Name -eq $s} | Disable-CimInstance } catch{} }
-                        }
-                        "DNS önbelleğini temizle"{ ipconfig /flushdns }
-                        "İnternet ayarlarını sıfırla"{ netsh winsock reset; netsh int ip reset }
-                        "Güncellemeleri kontrol et"{
-                            try{
-                                Install-Module PSWindowsUpdate -Force -ErrorAction SilentlyContinue
-                                Import-Module PSWindowsUpdate
-                                Get-WindowsUpdate -AcceptAll -Install
-                            }catch{}
-                        }
                     }
-                    $output+="✔ Tamamlandı"
-                }catch{ $output+="❌ Hata oluştu" }
+                    Log "✔ Geçici dosyalar temizlendi"
+                }
+                "Disk temizleme"{ cleanmgr /sagerun:1; Log "✔ Disk temizleme tamamlandı" }
+                "Diski optimize et"{
+                    $vols=Get-Volume | Where-Object {$_.DriveType -eq 'Fixed'}
+                    foreach($v in $vols){ try{ Optimize-Volume -DriveLetter $v.DriveLetter -ReTrim } catch{} }
+                    Log "✔ Disk optimize edildi"
+                }
+                "Başlangıç programlarını düzenle"{
+                    $sec=StartupSec
+                    foreach($s in $sec){ try{ Get-CimInstance Win32_StartupCommand | Where-Object {$_.Name -eq $s} | Disable-CimInstance } catch{} }
+                    Log "✔ Başlangıç programları düzenlendi"
+                }
+                "DNS önbelleğini temizle"{ ipconfig /flushdns; Log "✔ DNS önbelleği temizlendi" }
+                "İnternet ayarlarını sıfırla"{ netsh winsock reset; netsh int ip reset; Log "✔ İnternet ayarları sıfırlandı" }
+                "Güncellemeleri kontrol et"{
+                    try{
+                        Install-Module PSWindowsUpdate -Force -ErrorAction SilentlyContinue
+                        Import-Module PSWindowsUpdate
+                        Get-WindowsUpdate -AcceptAll -Install
+                    }catch{}
+                    Log "✔ Güncellemeler kontrol edildi"
+                }
             }
+        }catch{
+            Log "❌ $($task.Text) sırasında hata oluştu"
         }
-
-        return $output
-    } -ArgumentList $cbRestore,$boxes
-
-    while ($job.State -eq "Running"){
-        Start-Sleep -Milliseconds 200
-        Receive-Job -Job $job -Keep | ForEach-Object { Log $_ }
     }
-    Receive-Job -Job $job | ForEach-Object { Log $_ }
-    Remove-Job -Job $job
 
     Log ""
     Log "✅ TÜM İŞLEMLER TAMAMLANDI"
