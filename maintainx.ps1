@@ -4,7 +4,7 @@ Add-Type -AssemblyName System.Drawing
 # FORM
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "MaintainX - Windows Bakım"
-$form.Size = New-Object System.Drawing.Size(520,640)
+$form.Size = New-Object System.Drawing.Size(520,660)
 $form.StartPosition = "CenterScreen"
 $form.FormBorderStyle = 'FixedDialog'
 $form.MaximizeBox = $false
@@ -30,7 +30,7 @@ $form.Controls.Add($subtitle)
 
 # PANEL (checkbox alanı)
 $panel = New-Object System.Windows.Forms.Panel
-$panel.Size = New-Object System.Drawing.Size(460,360)
+$panel.Size = New-Object System.Drawing.Size(460,400)
 $panel.Location = New-Object System.Drawing.Point(30,90)
 $panel.BackColor = "#282828"
 $panel.BorderStyle = "FixedSingle"
@@ -52,6 +52,18 @@ $items = @(
 
 $boxes = @()
 $y = 20
+
+# EK: Geri Yükleme Noktası
+$cbRestore = New-Object System.Windows.Forms.CheckBox
+$cbRestore.Text = "Geri Yükleme Noktası Oluştur (Önerilir)"
+$cbRestore.ForeColor = "White"
+$cbRestore.BackColor = "#282828"
+$cbRestore.Font = New-Object System.Drawing.Font("Segoe UI",10,[System.Drawing.FontStyle]::Italic)
+$cbRestore.Location = New-Object System.Drawing.Point(20, $y)
+$cbRestore.AutoSize = $true
+$panel.Controls.Add($cbRestore)
+$y += 32
+
 foreach ($i in $items) {
     $cb = New-Object System.Windows.Forms.CheckBox
     $cb.Text = $i
@@ -69,7 +81,7 @@ foreach ($i in $items) {
 $run = New-Object System.Windows.Forms.Button
 $run.Text = "Başlat"
 $run.Size = New-Object System.Drawing.Size(150,45)
-$run.Location = New-Object System.Drawing.Point(180,470)
+$run.Location = New-Object System.Drawing.Point(180,510)
 $run.BackColor = "#0A84FF"
 $run.ForeColor = "White"
 $run.FlatStyle = "Flat"
@@ -79,8 +91,8 @@ $form.Controls.Add($run)
 # STATUS BOX
 $statusBox = New-Object System.Windows.Forms.TextBox
 $statusBox.Multiline = $true
-$statusBox.Size = New-Object System.Drawing.Size(460,90)
-$statusBox.Location = New-Object System.Drawing.Point(30,530)
+$statusBox.Size = New-Object System.Drawing.Size(460,100)
+$statusBox.Location = New-Object System.Drawing.Point(30,570)
 $statusBox.BackColor = "#111111"
 $statusBox.ForeColor = "LightGray"
 $statusBox.ReadOnly = $true
@@ -129,6 +141,15 @@ function StartupSec {
 $run.Add_Click({
     $statusBox.Clear()
     $statusBox.AppendText("Başlatılıyor...`r`n")
+
+    # Tek seferlik geri yükleme noktası
+    if ($cbRestore.Checked) {
+        try {
+            $statusBox.AppendText("→ Geri yükleme noktası oluşturuluyor...`r`n")
+            Checkpoint-Computer -Description "MaintainX Öncesi Bakım" -RestorePointType "MODIFY_SETTINGS"
+            $statusBox.AppendText("→ Geri yükleme noktası oluşturuldu.`r`n")
+        } catch { $statusBox.AppendText("→ Geri yükleme noktası oluşturulamadı.`r`n") }
+    }
 
     foreach ($b in $boxes) {
         if ($b.Checked) {
