@@ -1,8 +1,8 @@
-# MaintainX - Windows Bakım Aracı
+# WinMaintainer - Windows Bakım Aracı
 
-![MaintainX Logo](https://via.placeholder.com/300x80?text=MaintainX)
+![Maintainer Logo](https://via.placeholder.com/300x80?text=WinMaintainer)
 
-**MaintainX**, Windows için geliştirilmiş **kullanıcı kontrollü bakım aracıdır**.  
+**WinMaintainer**, Windows için geliştirilmiş **kullanıcı kontrollü bakım aracıdır**.  
 Tüm işlemler **seçim ile uygulanır**, maksimum güvenlik ve minimum hata ile tasarlanmıştır.  
 
 ---
@@ -50,7 +50,7 @@ Tüm işlemler **seçim ile uygulanır**, maksimum güvenlik ve minimum hata ile
 1. **PowerShell’i Yönetici olarak açın**  
 2. Execution Policy ayarı (gerekirse):
 
-```powershell
+powershell
 Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 3. Scripti çalıştırmak için:
@@ -111,4 +111,4 @@ Tüm katkılar teşekkürle karşılanır.
 
 ---
 
-> ⚡ Not: MaintainX hâlâ geliştirilen bir araçtır. Lütfen tüm işlemleri dikkatle ve kendi sorumluluğunuzda uygulayın.
+> ⚡ Not: WinMaintainer hâlâ geliştirilen bir araçtır. Lütfen tüm işlemleri dikkatle ve kendi sorumluluğunuzda uygulayın.
