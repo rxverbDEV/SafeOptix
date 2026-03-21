@@ -1,42 +1,63 @@
-# MaintainX
+# MaintainX - Windows Bakım Aracı
 
-**MaintainX**, Windows için geliştirilmiş açık kaynaklı bir bakım aracıdır.  
-Kullanıcıların kendi seçimine göre sistem dosyalarını onarma, disk hatalarını kontrol etme, geçici dosyaları temizleme, başlangıç programlarını yönetme ve daha fazlasını yapmasını sağlar.  
-Tamamen **Türkçe** ve **kullanıcı kontrolünde** bir araçtır.
+![MaintainX Logo](https://via.placeholder.com/300x80?text=MaintainX)
 
-> ⚠ Dikkat: MaintainX hâlâ **gelişmekte olan bir araçtır**.  
-> Bazı durumlarda beklenmedik hatalar oluşabilir.  
-> Lütfen bilgisayarınızı yedeklemeden önemli sistemlerde çalıştırmayın.
+**MaintainX**, Windows için geliştirilmiş **kullanıcı kontrollü bakım aracıdır**.  
+Tüm işlemler **seçim ile uygulanır**, maksimum güvenlik ve minimum hata ile tasarlanmıştır.  
 
 ---
 
-## Özellikler
-
+## 🔹 Öne Çıkan Özellikler
 - Sistem dosyalarını onarma (DISM + SFC)  
 - Disk hatalarını kontrol etme (CHKDSK)  
-- Windows Defender ile tam tarama  
+- Virüs taraması yapma (Windows Defender)  
 - Geçici dosyaları ve önbelleği temizleme  
-- Disk temizleme ve optimize etme  
-- Başlangıç uygulamalarını yönetme  
+- Disk temizleme ve optimize etme (TRIM)  
+- Başlangıç programlarını yönetme  
 - DNS önbelleğini temizleme  
-- Ağ ayarlarını sıfırlama (Winsock, IP reset)  
+- Internet ayarlarını sıfırlama (Winsock / IP reset)  
 - Windows güncellemelerini kontrol etme ve yükleme  
 
 ---
 
-## Kullanım
+## ⚠ Uyarılar ve Güvenlik Önlemleri
+1. **Yedekleme Önerisi**  
+   - Herhangi bir işlemden önce **sistem geri yükleme noktası** veya önemli dosyalarınızı yedekleyin.  
 
+2. **Admin Yetkisi Gerekliliği**  
+   - DISM, SFC, CHKDSK, Optimize-Volume ve güncelleme işlemleri için **PowerShell’i Yönetici olarak çalıştırın**.  
+
+3. **Kullanıcı Kontrolü**  
+   - Tüm işlemler **sadece seçilen seçenekler ile çalışır**.  
+   - Başlangıç programlarını yalnızca kullanıcı onayı ile değiştirir.  
+
+4. **Hata Yönetimi**  
+   - Script tüm işlemleri **try/catch** ile yönetir.  
+   - Hatalar **statusBox**’ta gösterilir ve script durmaz.  
+
+5. **Potansiyel Riskler**  
+   - CHKDSK uzun sürebilir, işlem sırasında bilgisayarı kapatmamak gerekir.  
+   - Disk optimize ve sistem onarım işlemleri nadiren sorun yaratabilir.  
+   - Windows Update sırasında internet veya modül hataları olabilir.  
+
+6. **Sorumluluk Reddi**  
+   - Bu araç **kullanıcı kendi sorumluluğunda çalıştırır**.  
+   - Yanlış kullanım veya sistem hatalarından yazar **sorumlu değildir**.  
+
+---
+
+## 🚀 Kurulum ve Kullanım
 1. **PowerShell’i Yönetici olarak açın**  
-2. Execution Policy’yi ayarlayın (gerekirse):  
+2. Execution Policy ayarı (gerekirse):
 
 ```powershell
 Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 
-3. MaintainX script’ini çalıştırmak için URL kullanın:
+3. Scripti çalıştırmak için:
 
 
 
-irm "https://raw.githubusercontent.com/rxverbDEV/maintainx/main/maintainx.ps1" | iex
+irm "https://raw.githubusercontent.com/<KULLANICI_ADI>/maintainx/main/maintainx.ps1" | iex
 
 4. Açılan GUI’de yapmak istediğiniz işlemleri tikleyin
 
@@ -45,39 +66,49 @@ irm "https://raw.githubusercontent.com/rxverbDEV/maintainx/main/maintainx.ps1" |
 
 
 
-> ⚠ Not: Bazı işlemler (DISM, CHKDSK, Optimize) admin yetkisi gerektirir.
-İşlem tamamlandıktan sonra bilgisayarı yeniden başlatmanız önerilir.
+> 💡 Tüm adımlar GUI üzerinden takip edilebilir, statusBox ilerlemeyi gösterir.
 
 
 
 
 ---
 
-Lisans
+🎨 Tasarım ve Kullanıcı Deneyimi
 
-Bu proje MIT License altında yayınlanmıştır.
-Kodunuzu kopyalayabilir, değiştirebilir ve dağıtabilirsiniz.
-Orijinal yazarı belirtmeyi unutmayın.
+Modern Dark Mode arayüz
 
+Profesyonel ve okunaklı fontlar (Segoe UI)
 
----
+StatusBox ile gerçek zamanlı işlem bilgisi
 
-Katkıda Bulunma
+Panel ve checkbox düzeni kullanıcı dostu
 
-Kod geliştirme, hata düzeltme veya yeni özellikler eklemek isterseniz Pull Request gönderebilirsiniz.
-
-Tüm katkılar için teşekkür ederiz!
+Mesaj kutuları ile işlem tamamlandığında bilgilendirme
 
 
 
 ---
 
-Notlar
+📦 Lisans
 
-Proje tamamen açık kaynak ve güvenlidir
+Bu proje MIT License altında açık kaynak olarak yayınlanmıştır.
 
-Fikir ve yöntemler yaygın olup, kodun tamamı özgün olarak geliştirilmiştir
+Kod üzerinde değişiklik yapabilir, paylaşabilir ve dağıtabilirsiniz.
 
-Türkçe kullanıcı dostu arayüz ile kolay kullanım sağlar
+Orijinal yazarı belirtmeniz yeterlidir.
 
-Yeni bir araç olduğu için bazı sorunlar yaşanabilir. Lütfen kullanım sırasında dikkatli olun.
+
+
+---
+
+🤝 Katkıda Bulunma
+
+Hata düzeltme, geliştirme veya yeni özellik eklemek için Pull Request gönderebilirsiniz.
+
+Tüm katkılar teşekkürle karşılanır.
+
+
+
+---
+
+> ⚡ Not: MaintainX hâlâ geliştirilen bir araçtır. Lütfen tüm işlemleri dikkatle ve kendi sorumluluğunuzda uygulayın.
