@@ -76,7 +76,7 @@ foreach($i in $items){
 # ==================== PROGRESS BAR ====================
 $progressBar = New-Object System.Windows.Forms.ProgressBar
 $progressBar.Size = New-Object System.Drawing.Size(580,25)
-$progressBar.Location = New-Object System.Drawing.Point(30, 650) # Başlat tuşunun üstünde
+$progressBar.Location = New-Object System.Drawing.Point(30, 650)
 $progressBar.Minimum = 0
 $progressBar.Maximum = 100
 $progressBar.Value = 0
@@ -86,11 +86,22 @@ $form.Controls.Add($progressBar)
 $run = New-Object System.Windows.Forms.Button
 $run.Text="Başlat"
 $run.Size=New-Object System.Drawing.Size(200,50)
-$run.Location=New-Object System.Drawing.Point(220,685) # Progress bar'ın altına
+$run.Location=New-Object System.Drawing.Point(220,685)
 $run.BackColor="#0A84FF"
 $run.ForeColor="White"
 $run.FlatStyle="Flat"
-$run.Font=New-Object System.Drawing.Font("Segoe UI",12,[System.Drawing.FontStyle]::Bold)
+$run.Font = New-Object System.Drawing.Font("Segoe UI",12,[System.Drawing.FontStyle]::Bold)
+$run.Region = [System.Drawing.Region]::FromHrgn((Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+public class RoundRect {
+    [DllImport("gdi32.dll")]
+    public static extern IntPtr CreateRoundRectRgn(
+        int nLeftRect, int nTopRect, int nRightRect, int nBottomRect,
+        int nWidthEllipse, int nHeightEllipse);
+}
+"@ -PassThru | Out-Null
+[int]([RoundRect]::CreateRoundRectRgn(0,0,$run.Width,$run.Height,20,20)))
 $form.Controls.Add($run)
 
 # ==================== STATUS BOX ====================
@@ -170,51 +181,16 @@ $run.Add_Click({
                     Checkpoint-Computer -Description "SafeOptix Öncesi Bakım" -RestorePointType "MODIFY_SETTINGS"
                     Log("✔ Geri yükleme noktası oluşturuldu")
                 }
-                "Sistem dosyalarını onar"{
-                    DISM /Online /Cleanup-Image /RestoreHealth
-                    sfc /scannow
-                    Log("✔ Sistem dosyaları onarıldı")
-                }
-                "Disk hatalarını kontrol et"{
-                    $drives = Get-Volume | Where-Object {$_.DriveType -eq 'Fixed'}
-                    foreach($d in $drives){
-                        chkdsk $d.DriveLetter /f /r /x
-                        Log("✔ Disk $($d.DriveLetter) kontrol edildi")
-                    }
-                }
+                "Sistem dosyalarını onar"{ DISM /Online /Cleanup-Image /RestoreHealth; sfc /scannow; Log("✔ Sistem dosyaları onarıldı") }
+                "Disk hatalarını kontrol et"{ Get-Volume | Where-Object {$_.DriveType -eq 'Fixed'} | ForEach-Object {chkdsk $_.DriveLetter /f /r /x; Log("✔ Disk $($_.DriveLetter) kontrol edildi")} }
                 "Virüs taraması yap"{ Start-MpScan -ScanType FullScan; Log("✔ Virüs taraması tamamlandı") }
-                "Geçici dosyaları temizle"{
-                    $paths=@("$env:TEMP","C:\Windows\Temp","C:\Windows\Prefetch","$env:USERPROFILE\Recent")
-                    foreach($p in $paths){
-                        if(Test-Path $p){
-                            Get-ChildItem $p -Recurse -Force -ErrorAction SilentlyContinue | ForEach-Object {
-                                try{ Remove-Item $_.FullName -Force -Recurse -ErrorAction Stop } catch{}
-                            }
-                        }
-                    }
-                    Log("✔ Geçici dosyalar temizlendi")
-                }
+                "Geçici dosyaları temizle"{ $paths=@("$env:TEMP","C:\Windows\Temp","C:\Windows\Prefetch","$env:USERPROFILE\Recent"); foreach($p in $paths){if(Test-Path $p){Get-ChildItem $p -Recurse -Force -ErrorAction SilentlyContinue | ForEach-Object {try{Remove-Item $_.FullName -Force -Recurse -ErrorAction Stop} catch{}}}}; Log("✔ Geçici dosyalar temizlendi") }
                 "Disk temizleme"{ Log("⚠ Disk temizleme artık manuel yapılmıyor, geçici dosyaları temizle ile birleşti") }
-                "Diski optimize et"{
-                    $vols=Get-Volume | Where-Object {$_.DriveType -eq 'Fixed'}
-                    foreach($v in $vols){ try{ Optimize-Volume -DriveLetter $v.DriveLetter -ReTrim } catch{} }
-                    Log("✔ Disk optimize edildi")
-                }
-                "Başlangıç programlarını düzenle"{
-                    $sec=StartupSec
-                    foreach($s in $sec){ try{ Get-CimInstance Win32_StartupCommand | Where-Object {$_.Name -eq $s} | Disable-CimInstance } catch{} }
-                    Log("✔ Başlangıç programları düzenlendi")
-                }
+                "Diski optimize et"{ Get-Volume | Where-Object {$_.DriveType -eq 'Fixed'} | ForEach-Object {try{Optimize-Volume -DriveLetter $_.DriveLetter -ReTrim} catch{}}; Log("✔ Disk optimize edildi") }
+                "Başlangıç programlarını düzenle"{ $sec=StartupSec; foreach($s in $sec){try{Get-CimInstance Win32_StartupCommand | Where-Object {$_.Name -eq $s} | Disable-CimInstance} catch{}}; Log("✔ Başlangıç programları düzenlendi") }
                 "DNS önbelleğini temizle"{ ipconfig /flushdns; Log("✔ DNS önbelleği temizlendi") }
                 "İnternet ayarlarını sıfırla"{ netsh winsock reset; netsh int ip reset; Log("✔ İnternet ayarları sıfırlandı") }
-                "Güncellemeleri kontrol et"{
-                    try{
-                        Install-Module PSWindowsUpdate -Force -ErrorAction SilentlyContinue
-                        Import-Module PSWindowsUpdate
-                        Get-WindowsUpdate -AcceptAll -Install
-                    }catch{}
-                    Log("✔ Güncellemeler kontrol edildi")
-                }
+                "Güncellemeleri kontrol et"{ try{Install-Module PSWindowsUpdate -Force -ErrorAction SilentlyContinue; Import-Module PSWindowsUpdate; Get-WindowsUpdate -AcceptAll -Install} catch{}; Log("✔ Güncellemeler kontrol edildi") }
             }
         }catch{
             Log("❌ $($task.Text) sırasında hata oluştu")
@@ -225,7 +201,11 @@ $run.Add_Click({
     Log("✅ TÜM İŞLEMLER TAMAMLANDI")
     [System.Windows.Forms.MessageBox]::Show("Bakım tamamlandı")
 
-    # Seçimleri sıfırlama: işlemler bittikten sonra
+    # Status box sıfırlansın
+    Start-Sleep -Milliseconds 500
+    $statusBox.Clear()
+
+    # Seçimler sıfırlansın
     foreach($cb in $boxes){$cb.Checked = $false}
     $cbRestore.Checked = $false
     $run.Enabled = $true
