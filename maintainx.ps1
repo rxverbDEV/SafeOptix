@@ -4,7 +4,7 @@ Add-Type -AssemblyName System.Drawing
 # ==================== FORM ====================
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "MaintainX - Windows Bakım"
-$form.Size = New-Object System.Drawing.Size(600,800)
+$form.Size = New-Object System.Drawing.Size(650,850)
 $form.StartPosition = "CenterScreen"
 $form.FormBorderStyle = 'FixedDialog'
 $form.MaximizeBox = $false
@@ -31,13 +31,13 @@ $title.Text = "MaintainX"
 $title.Font = New-Object System.Drawing.Font("Segoe UI",24,[System.Drawing.FontStyle]::Bold)
 $title.ForeColor = "#0A84FF"
 $title.AutoSize = $true
-$title.Location = New-Object System.Drawing.Point(200,15)
+$title.Location = New-Object System.Drawing.Point(220,15)
 $form.Controls.Add($title)
 
 # ==================== PANEL ====================
 $panel = New-Object System.Windows.Forms.Panel
-$panel.Size = New-Object System.Drawing.Size(540,520)
-$panel.Location = New-Object System.Drawing.Point(25,90)
+$panel.Size = New-Object System.Drawing.Size(580,540)
+$panel.Location = New-Object System.Drawing.Point(30,90)
 $panel.BackColor = "#1E1E1E"
 $panel.AutoScroll = $true
 $form.Controls.Add($panel)
@@ -51,6 +51,8 @@ $cbRestore.Text = "Geri Yükleme Noktası Oluştur (Önerilir)"
 $cbRestore.ForeColor = "White"
 $cbRestore.Font = New-Object System.Drawing.Font("Segoe UI",10,[System.Drawing.FontStyle]::Italic)
 $cbRestore.Location = New-Object System.Drawing.Point(20,$y)
+$cbRestore.Size = New-Object System.Drawing.Size(540,28)
+$cbRestore.AutoSize = $false
 $panel.Controls.Add($cbRestore)
 $y+=32
 
@@ -74,6 +76,8 @@ foreach($i in $items){
     $cb.ForeColor="White"
     $cb.Font=New-Object System.Drawing.Font("Segoe UI",10)
     $cb.Location=New-Object System.Drawing.Point(20,$y)
+    $cb.Size=New-Object System.Drawing.Size(540,28)
+    $cb.AutoSize=$false
     $panel.Controls.Add($cb)
     $boxes+=$cb
     $y+=32
@@ -83,7 +87,7 @@ foreach($i in $items){
 $run = New-Object System.Windows.Forms.Button
 $run.Text="Başlat"
 $run.Size=New-Object System.Drawing.Size(200,50)
-$run.Location=New-Object System.Drawing.Point(200,630)
+$run.Location=New-Object System.Drawing.Point(220,650)
 $run.BackColor="#0A84FF"
 $run.ForeColor="White"
 $run.FlatStyle="Flat"
@@ -93,8 +97,8 @@ $form.Controls.Add($run)
 # ==================== STATUS BOX ====================
 $statusBox=New-Object System.Windows.Forms.TextBox
 $statusBox.Multiline=$true
-$statusBox.Size=New-Object System.Drawing.Size(540,180)
-$statusBox.Location=New-Object System.Drawing.Point(25,700)
+$statusBox.Size=New-Object System.Drawing.Size(580,180)
+$statusBox.Location=New-Object System.Drawing.Point(30,720)
 $statusBox.BackColor="#111111"
 $statusBox.ForeColor="LightGray"
 $statusBox.ReadOnly=$true
@@ -108,12 +112,12 @@ function StartupSec {
     if ($apps.Count -eq 0) { return @() }
     $f=New-Object System.Windows.Forms.Form
     $f.Text="Başlangıç Programları"
-    $f.Size=New-Object System.Drawing.Size(400,400)
+    $f.Size=New-Object System.Drawing.Size(450,400)
     $f.StartPosition="CenterScreen"
     $f.BackColor="#1E1E1E"
 
     $list=New-Object System.Windows.Forms.CheckedListBox
-    $list.Size=New-Object System.Drawing.Size(350,250)
+    $list.Size=New-Object System.Drawing.Size(400,250)
     $list.Location=New-Object System.Drawing.Point(20,20)
     $list.BackColor="#111111"
     $list.ForeColor="White"
@@ -122,7 +126,7 @@ function StartupSec {
 
     $ok=New-Object System.Windows.Forms.Button
     $ok.Text="Uygula"
-    $ok.Location=New-Object System.Drawing.Point(130,290)
+    $ok.Location=New-Object System.Drawing.Point(160,290)
     $ok.BackColor="#0A84FF"
     $ok.ForeColor="White"
     $ok.FlatStyle="Flat"
@@ -143,8 +147,6 @@ $run.Add_Click({
 
     $job = Start-Job -ScriptBlock {
         param($cbRestore,$boxes)
-
-        function LogLocal($text){ Write-Output $text }
 
         $output=@()
 
