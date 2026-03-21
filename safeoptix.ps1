@@ -4,7 +4,7 @@ Add-Type -AssemblyName System.Drawing
 # ==================== FORM ====================
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "SafeCare - Windows Bakım"
-$form.Size = New-Object System.Drawing.Size(650,950)
+$form.Size = New-Object System.Drawing.Size(650,820)
 $form.StartPosition = "CenterScreen"
 $form.FormBorderStyle = 'FixedDialog'
 $form.MaximizeBox = $false
@@ -28,7 +28,7 @@ $form.Controls.Add($title)
 
 # ==================== PANEL ====================
 $panel = New-Object System.Windows.Forms.Panel
-$panel.Size = New-Object System.Drawing.Size(580,540)
+$panel.Size = New-Object System.Drawing.Size(580,450)
 $panel.Location = New-Object System.Drawing.Point(30,90)
 $panel.BackColor = "#1E1E1E"
 $panel.AutoScroll = $true
@@ -75,22 +75,20 @@ foreach($i in $items){
     $y+=32
 }
 
-# ==================== BAŞLAT BUTONU ====================
-$run = New-Object System.Windows.Forms.Button
-$run.Text="Başlat"
-$run.Size=New-Object System.Drawing.Size(200,50)
-$run.Location=New-Object System.Drawing.Point(220,650)
-$run.BackColor="#0A84FF"
-$run.ForeColor="White"
-$run.FlatStyle="Flat"
-$run.Font=New-Object System.Drawing.Font("Segoe UI",12,[System.Drawing.FontStyle]::Bold)
-$form.Controls.Add($run)
+# ==================== PROGRESS BAR ====================
+$progressBar = New-Object System.Windows.Forms.ProgressBar
+$progressBar.Size = New-Object System.Drawing.Size(580,25)
+$progressBar.Location = New-Object System.Drawing.Point(30,560)
+$progressBar.Minimum = 0
+$progressBar.Maximum = 100
+$progressBar.Value = 0
+$form.Controls.Add($progressBar)
 
 # ==================== STATUS BOX ====================
 $statusBox=New-Object System.Windows.Forms.TextBox
 $statusBox.Multiline=$true
-$statusBox.Size=New-Object System.Drawing.Size(580,200)
-$statusBox.Location=New-Object System.Drawing.Point(30,720)
+$statusBox.Size=New-Object System.Drawing.Size(580,180)
+$statusBox.Location=New-Object System.Drawing.Point(30,600)
 $statusBox.BackColor="#111111"
 $statusBox.ForeColor="LightGray"
 $statusBox.ReadOnly=$true
@@ -98,14 +96,16 @@ $statusBox.ScrollBars="Vertical"
 $statusBox.WordWrap=$true
 $form.Controls.Add($statusBox)
 
-# ==================== PROGRESS BAR ====================
-$progressBar = New-Object System.Windows.Forms.ProgressBar
-$progressBar.Size = New-Object System.Drawing.Size(580,25)
-$progressBar.Location = New-Object System.Drawing.Point(30, 680)
-$progressBar.Minimum = 0
-$progressBar.Maximum = 100
-$progressBar.Value = 0
-$form.Controls.Add($progressBar)
+# ==================== BAŞLAT BUTONU ====================
+$run = New-Object System.Windows.Forms.Button
+$run.Text="Başlat"
+$run.Size=New-Object System.Drawing.Size(200,50)
+$run.Location=New-Object System.Drawing.Point(220,790)
+$run.BackColor="#0A84FF"
+$run.ForeColor="White"
+$run.FlatStyle="Flat"
+$run.Font=New-Object System.Drawing.Font("Segoe UI",12,[System.Drawing.FontStyle]::Bold)
+$form.Controls.Add($run)
 
 # ==================== STARTUP SEC ====================
 function StartupSec {
@@ -225,11 +225,17 @@ $run.Add_Click({
         }
     }
 
+    # Tamamlandıktan sonra progress bar ve checkbox reset
     $progressBar.Value = 100
     Log("")
     Log("✅ TÜM İŞLEMLER TAMAMLANDI")
     [System.Windows.Forms.MessageBox]::Show("Bakım tamamlandı")
-    $run.Enabled=$true
+    
+    # Checkboxları sıfırla
+    foreach($c in $boxes){$c.Checked=$false}
+    $cbRestore.Checked = $false
+    $progressBar.Value = 0
+    $run.Enabled = $true
 })
 
 [void]$form.ShowDialog()
