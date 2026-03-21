@@ -1,168 +1,46 @@
-Add-Type -AssemblyName System.Windows.Forms
-Add-Type -AssemblyName System.Drawing
-
-# ==================== FORM ====================
-$form = New-Object System.Windows.Forms.Form
-$form.Text = "SafeOptix - Windows Bakım"
-$form.Size = New-Object System.Drawing.Size(650,900)
-$form.StartPosition = "CenterScreen"
-$form.FormBorderStyle = 'FixedDialog'
-$form.MaximizeBox = $false
-$form.BackColor = "#121212"
-
-# ==================== LOG FUNCTION ====================
-function Log($text) {
-    $statusBox.AppendText($text + "`r`n")
-    $statusBox.SelectionStart = $statusBox.Text.Length
-    $statusBox.ScrollToCaret()
-}
-
-# ==================== TITLE ====================
-$title = New-Object System.Windows.Forms.Label
-$title.Text = "SafeOptix"
-$title.Font = New-Object System.Drawing.Font("Segoe UI",24,[System.Drawing.FontStyle]::Bold)
-$title.ForeColor = "#0A84FF"
-$title.AutoSize = $true
-$title.Location = New-Object System.Drawing.Point(220,15)
-$form.Controls.Add($title)
-
-# ==================== PANEL ====================
-$panel = New-Object System.Windows.Forms.Panel
-$panel.Size = New-Object System.Drawing.Size(580,540)
-$panel.Location = New-Object System.Drawing.Point(30,90)
-$panel.BackColor = "#1E1E1E"
-$panel.AutoScroll = $true
-$form.Controls.Add($panel)
-
-# ==================== CHECKBOXES ====================
-$y=20
-
-# Geri Yükleme Noktası
-$cbRestore = New-Object System.Windows.Forms.CheckBox
-$cbRestore.Text = "Geri Yükleme Noktası Oluştur (Önerilir)"
-$cbRestore.ForeColor = "White"
-$cbRestore.Font = New-Object System.Drawing.Font("Segoe UI",10,[System.Drawing.FontStyle]::Italic)
-$cbRestore.Location = New-Object System.Drawing.Point(20,$y)
-$cbRestore.Size = New-Object System.Drawing.Size(540,28)
-$cbRestore.AutoSize = $false
-$panel.Controls.Add($cbRestore)
-$y+=32
-
-$items=@(
-"Sistem dosyalarını onar",
-"Disk hatalarını kontrol et",
-"Virüs taraması yap",
-"Geçici dosyaları temizle",
-"Disk temizleme",
-"Diski optimize et",
-"Başlangıç programlarını düzenle",
-"DNS önbelleğini temizle",
-"İnternet ayarlarını sıfırla",
-"Güncellemeleri kontrol et"
-)
-
-$boxes=@()
-foreach($i in $items){
-    $cb=New-Object System.Windows.Forms.CheckBox
-    $cb.Text=$i
-    $cb.ForeColor="White"
-    $cb.Font=New-Object System.Drawing.Font("Segoe UI",10)
-    $cb.Location=New-Object System.Drawing.Point(20,$y)
-    $cb.Size=New-Object System.Drawing.Size(540,28)
-    $cb.AutoSize=$false
-    $panel.Controls.Add($cb)
-    $boxes+=$cb
-    $y+=32
-}
-
-# ==================== BAŞLAT BUTONU ====================
-$run = New-Object System.Windows.Forms.Button
-$run.Text="Başlat"
-$run.Size=New-Object System.Drawing.Size(200,50)
-$run.Location=New-Object System.Drawing.Point(220,650)
-$run.BackColor="#0A84FF"
-$run.ForeColor="White"
-$run.FlatStyle="Flat"
-$run.Font=New-Object System.Drawing.Font("Segoe UI",12,[System.Drawing.FontStyle]::Bold)
-$form.Controls.Add($run)
-
-# ==================== STATUS BOX ====================
-$statusBox=New-Object System.Windows.Forms.TextBox
-$statusBox.Multiline=$true
-$statusBox.Size=New-Object System.Drawing.Size(580,200)
-$statusBox.Location=New-Object System.Drawing.Point(30,720)
-$statusBox.BackColor="#111111"
-$statusBox.ForeColor="LightGray"
-$statusBox.ReadOnly=$true
-$statusBox.ScrollBars="Vertical"
-$statusBox.WordWrap=$true
-$form.Controls.Add($statusBox)
-
-# ==================== STARTUP SEC ====================
-function StartupSec {
-    $apps = Get-CimInstance Win32_StartupCommand | Where-Object {$_.User -eq "$env:USERNAME"}
-    if ($apps.Count -eq 0) { return @() }
-    $f=New-Object System.Windows.Forms.Form
-    $f.Text="Başlangıç Programları"
-    $f.Size=New-Object System.Drawing.Size(450,400)
-    $f.StartPosition="CenterScreen"
-    $f.BackColor="#1E1E1E"
-
-    $list=New-Object System.Windows.Forms.CheckedListBox
-    $list.Size=New-Object System.Drawing.Size(400,250)
-    $list.Location=New-Object System.Drawing.Point(20,20)
-    $list.BackColor="#111111"
-    $list.ForeColor="White"
-    foreach($a in $apps){$list.Items.Add($a.Name)}
-    $f.Controls.Add($list)
-
-    $ok=New-Object System.Windows.Forms.Button
-    $ok.Text="Uygula"
-    $ok.Location=New-Object System.Drawing.Point(160,290)
-    $ok.BackColor="#0A84FF"
-    $ok.ForeColor="White"
-    $ok.FlatStyle="Flat"
-    $f.Controls.Add($ok)
-
-    $sec=@()
-    $ok.Add_Click({
-        foreach($i in $list.CheckedItems){$sec+=$i}
-        $f.Close()
-    })
-    $f.ShowDialog()
-    return $sec
-}
+# ==================== PROGRESS BAR ====================
+$progressBar = New-Object System.Windows.Forms.ProgressBar
+$progressBar.Size = New-Object System.Drawing.Size(580,25)
+$progressBar.Location = New-Object System.Drawing.Point(30, 690)
+$progressBar.Minimum = 0
+$progressBar.Maximum = 100
+$progressBar.Value = 0
+$form.Controls.Add($progressBar)
 
 # ==================== ÇALIŞTIR ====================
 $run.Add_Click({
-    $run.Enabled=$false
-
-    # ================= SIRALI ÇALIŞTIR =================
+    $run.Enabled = $false
     $allTasks = @()
     if($cbRestore.Checked){$allTasks+=$cbRestore}
     $allTasks += $boxes | Where-Object {$_.Checked}
 
+    $taskCount = $allTasks.Count
+    $current = 0
+
     foreach($task in $allTasks){
-        Log "▶ $($task.Text)"
+        $current++
+        $percent = [int](($current / $taskCount) * 100)
+        $progressBar.Value = $percent
+        Log("[$percent%] ▶ $($task.Text)")
         try{
             switch($task.Text){
                 "Geri Yükleme Noktası Oluştur (Önerilir)"{
                     Checkpoint-Computer -Description "SafeOptix Öncesi Bakım" -RestorePointType "MODIFY_SETTINGS"
-                    Log "✔ Geri yükleme noktası oluşturuldu"
+                    Log("✔ Geri yükleme noktası oluşturuldu","success")
                 }
                 "Sistem dosyalarını onar"{
                     DISM /Online /Cleanup-Image /RestoreHealth
                     sfc /scannow
-                    Log "✔ Sistem dosyaları onarıldı"
+                    Log("✔ Sistem dosyaları onarıldı","success")
                 }
                 "Disk hatalarını kontrol et"{
-                    $drives=Get-Volume | Where-Object {$_.DriveType -eq 'Fixed'}
+                    $drives = Get-Volume | Where-Object {$_.DriveType -eq 'Fixed'}
                     foreach($d in $drives){
                         chkdsk $d.DriveLetter /f /r /x
-                        Log "✔ Disk $($d.DriveLetter) kontrol edildi"
+                        Log("✔ Disk $($d.DriveLetter) kontrol edildi","success")
                     }
                 }
-                "Virüs taraması yap"{ Start-MpScan -ScanType FullScan; Log "✔ Virüs taraması tamamlandı" }
+                "Virüs taraması yap"{ Start-MpScan -ScanType FullScan; Log("✔ Virüs taraması tamamlandı","success") }
                 "Geçici dosyaları temizle"{
                     $paths=@("$env:TEMP","C:\Windows\Temp","$env:LOCALAPPDATA\Temp")
                     foreach($p in $paths){
@@ -172,39 +50,38 @@ $run.Add_Click({
                             }
                         }
                     }
-                    Log "✔ Geçici dosyalar temizlendi"
+                    Log("✔ Geçici dosyalar temizlendi","success")
                 }
-                "Disk temizleme"{ cleanmgr /sagerun:1; Log "✔ Disk temizleme tamamlandı" }
+                "Disk temizleme"{ cleanmgr /sagerun:1; Log("✔ Disk temizleme tamamlandı","success") }
                 "Diski optimize et"{
                     $vols=Get-Volume | Where-Object {$_.DriveType -eq 'Fixed'}
                     foreach($v in $vols){ try{ Optimize-Volume -DriveLetter $v.DriveLetter -ReTrim } catch{} }
-                    Log "✔ Disk optimize edildi"
+                    Log("✔ Disk optimize edildi","success")
                 }
                 "Başlangıç programlarını düzenle"{
                     $sec=StartupSec
                     foreach($s in $sec){ try{ Get-CimInstance Win32_StartupCommand | Where-Object {$_.Name -eq $s} | Disable-CimInstance } catch{} }
-                    Log "✔ Başlangıç programları düzenlendi"
+                    Log("✔ Başlangıç programları düzenlendi","success")
                 }
-                "DNS önbelleğini temizle"{ ipconfig /flushdns; Log "✔ DNS önbelleği temizlendi" }
-                "İnternet ayarlarını sıfırla"{ netsh winsock reset; netsh int ip reset; Log "✔ İnternet ayarları sıfırlandı" }
+                "DNS önbelleğini temizle"{ ipconfig /flushdns; Log("✔ DNS önbelleği temizlendi","success") }
+                "İnternet ayarlarını sıfırla"{ netsh winsock reset; netsh int ip reset; Log("✔ İnternet ayarları sıfırlandı","success") }
                 "Güncellemeleri kontrol et"{
                     try{
                         Install-Module PSWindowsUpdate -Force -ErrorAction SilentlyContinue
                         Import-Module PSWindowsUpdate
                         Get-WindowsUpdate -AcceptAll -Install
                     }catch{}
-                    Log "✔ Güncellemeler kontrol edildi"
+                    Log("✔ Güncellemeler kontrol edildi","success")
                 }
             }
         }catch{
-            Log "❌ $($task.Text) sırasında hata oluştu"
+            Log("❌ $($task.Text) sırasında hata oluştu","error")
         }
     }
 
-    Log ""
-    Log "✅ TÜM İŞLEMLER TAMAMLANDI"
+    $progressBar.Value = 100
+    Log("")
+    Log("✅ TÜM İŞLEMLER TAMAMLANDI","success")
     [System.Windows.Forms.MessageBox]::Show("Bakım tamamlandı")
     $run.Enabled=$true
 })
-
-[void]$form.ShowDialog()
