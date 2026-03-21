@@ -1,8 +1,8 @@
-# WinMaintainer - Windows Bakım Aracı
+# SafeOptix - Windows Bakım Aracı
 
-![Maintainer Logo](https://via.placeholder.com/300x80?text=WinMaintainer)
+![SafeOptix Logo](https://via.placeholder.com/300x80?text=SafeOptix)
 
-**WinMaintainer**, Windows için geliştirilmiş **kullanıcı kontrollü bakım aracıdır**.  
+**SafeOptix**, Windows için geliştirilmiş **kullanıcı kontrollü bakım aracıdır**.  
 Tüm işlemler **seçim ile uygulanır**, maksimum güvenlik ve minimum hata ile tasarlanmıştır.  
 
 ---
@@ -57,7 +57,7 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 
 
-irm "https://raw.githubusercontent.com/rxverbDEV/maintainx/main/maintainx.ps1" | iex
+irm "https://raw.githubusercontent.com/rxverbDEV/maintainx/main/safeoptix.ps1" | iex
 
 4. Açılan GUI’de yapmak istediğiniz işlemleri tikleyin
 
@@ -111,4 +111,4 @@ Tüm katkılar teşekkürle karşılanır.
 
 ---
 
-> ⚡ Not: WinMaintainer hâlâ geliştirilen bir araçtır. Lütfen tüm işlemleri dikkatle ve kendi sorumluluğunuzda uygulayın.
+> ⚡ Not: SafeOptix hâlâ geliştirilen bir araçtır. Lütfen tüm işlemleri dikkatle ve kendi sorumluluğunuzda uygulayın.
