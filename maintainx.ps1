@@ -4,7 +4,7 @@ Add-Type -AssemblyName System.Drawing
 # ==================== FORM ====================
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "MaintainX - Windows Bakım"
-$form.Size = New-Object System.Drawing.Size(560,740)
+$form.Size = New-Object System.Drawing.Size(600,800)
 $form.StartPosition = "CenterScreen"
 $form.FormBorderStyle = 'FixedDialog'
 $form.MaximizeBox = $false
@@ -28,7 +28,7 @@ function Log($text) {
 # ==================== TITLE ====================
 $title = New-Object System.Windows.Forms.Label
 $title.Text = "MaintainX"
-$title.Font = New-Object System.Drawing.Font("Segoe UI",22,[System.Drawing.FontStyle]::Bold)
+$title.Font = New-Object System.Drawing.Font("Segoe UI",24,[System.Drawing.FontStyle]::Bold)
 $title.ForeColor = "#0A84FF"
 $title.AutoSize = $true
 $title.Location = New-Object System.Drawing.Point(200,15)
@@ -36,9 +36,10 @@ $form.Controls.Add($title)
 
 # ==================== PANEL ====================
 $panel = New-Object System.Windows.Forms.Panel
-$panel.Size = New-Object System.Drawing.Size(500,480)
+$panel.Size = New-Object System.Drawing.Size(540,520)
 $panel.Location = New-Object System.Drawing.Point(25,90)
 $panel.BackColor = "#1E1E1E"
+$panel.AutoScroll = $true
 $form.Controls.Add($panel)
 
 # ==================== CHECKBOXES ====================
@@ -82,7 +83,7 @@ foreach($i in $items){
 $run = New-Object System.Windows.Forms.Button
 $run.Text="Başlat"
 $run.Size=New-Object System.Drawing.Size(200,50)
-$run.Location=New-Object System.Drawing.Point(180,590)
+$run.Location=New-Object System.Drawing.Point(200,630)
 $run.BackColor="#0A84FF"
 $run.ForeColor="White"
 $run.FlatStyle="Flat"
@@ -92,12 +93,13 @@ $form.Controls.Add($run)
 # ==================== STATUS BOX ====================
 $statusBox=New-Object System.Windows.Forms.TextBox
 $statusBox.Multiline=$true
-$statusBox.Size=New-Object System.Drawing.Size(500,140)
-$statusBox.Location=New-Object System.Drawing.Point(25,650)
-$statusBox.BackColor="#0F0F0F"
+$statusBox.Size=New-Object System.Drawing.Size(540,180)
+$statusBox.Location=New-Object System.Drawing.Point(25,700)
+$statusBox.BackColor="#111111"
 $statusBox.ForeColor="LightGray"
 $statusBox.ReadOnly=$true
 $statusBox.ScrollBars="Vertical"
+$statusBox.WordWrap=$true
 $form.Controls.Add($statusBox)
 
 # ==================== STARTUP SEC ====================
@@ -106,7 +108,7 @@ function StartupSec {
     if ($apps.Count -eq 0) { return @() }
     $f=New-Object System.Windows.Forms.Form
     $f.Text="Başlangıç Programları"
-    $f.Size=New-Object System.Drawing.Size(400,380)
+    $f.Size=New-Object System.Drawing.Size(400,400)
     $f.StartPosition="CenterScreen"
     $f.BackColor="#1E1E1E"
 
@@ -139,7 +141,7 @@ function StartupSec {
 $run.Add_Click({
     $run.Enabled=$false
 
-    Start-Job -ScriptBlock {
+    $job = Start-Job -ScriptBlock {
         param($cbRestore,$boxes)
 
         function LogLocal($text){ Write-Output $text }
@@ -186,7 +188,8 @@ $run.Add_Click({
                             foreach($v in $vols){ try{ Optimize-Volume -DriveLetter $v.DriveLetter -ReTrim } catch{} }
                         }
                         "Başlangıç programlarını düzenle"{
-                            Start-Process "taskmgr.exe"
+                            $sec=StartupSec
+                            foreach($s in $sec){ try{ Get-CimInstance Win32_StartupCommand | Where-Object {$_.Name -eq $s} | Disable-CimInstance } catch{} }
                         }
                         "DNS önbelleğini temizle"{ ipconfig /flushdns }
                         "İnternet ayarlarını sıfırla"{ netsh winsock reset; netsh int ip reset }
@@ -204,7 +207,14 @@ $run.Add_Click({
         }
 
         return $output
-    } -ArgumentList $cbRestore,$boxes | Wait-Job | Receive-Job | ForEach-Object { Log $_ }
+    } -ArgumentList $cbRestore,$boxes
+
+    while ($job.State -eq "Running"){
+        Start-Sleep -Milliseconds 200
+        Receive-Job -Job $job -Keep | ForEach-Object { Log $_ }
+    }
+    Receive-Job -Job $job | ForEach-Object { Log $_ }
+    Remove-Job -Job $job
 
     Log ""
     Log "✅ TÜM İŞLEMLER TAMAMLANDI"
