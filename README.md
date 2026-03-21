@@ -4,6 +4,10 @@
 Kullanıcıların kendi seçimine göre sistem dosyalarını onarma, disk hatalarını kontrol etme, geçici dosyaları temizleme, başlangıç programlarını yönetme ve daha fazlasını yapmasını sağlar.  
 Tamamen **Türkçe** ve **kullanıcı kontrolünde** bir araçtır.
 
+> ⚠ Dikkat: MaintainX hâlâ **gelişmekte olan bir araçtır**.  
+> Bazı durumlarda beklenmedik hatalar oluşabilir.  
+> Lütfen bilgisayarınızı yedeklemeden önemli sistemlerde çalıştırmayın.
+
 ---
 
 ## Özellikler
@@ -75,3 +79,5 @@ Proje tamamen açık kaynak ve güvenlidir
 Fikir ve yöntemler yaygın olup, kodun tamamı özgün olarak geliştirilmiştir
 
 Türkçe kullanıcı dostu arayüz ile kolay kullanım sağlar
+
+Yeni bir araç olduğu için bazı sorunlar yaşanabilir. Lütfen kullanım sırasında dikkatli olun.
