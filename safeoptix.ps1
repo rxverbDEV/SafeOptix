@@ -3,7 +3,7 @@ Add-Type -AssemblyName System.Drawing
 
 # ==================== FORM ====================
 $form = New-Object System.Windows.Forms.Form
-$form.Text = "SafeOptix - Windows Bakım"
+$form.Text = "SafeCare - Windows Bakım"
 $form.Size = New-Object System.Drawing.Size(650,950)
 $form.StartPosition = "CenterScreen"
 $form.FormBorderStyle = 'FixedDialog'
@@ -19,7 +19,7 @@ function Log($text) {
 
 # ==================== TITLE ====================
 $title = New-Object System.Windows.Forms.Label
-$title.Text = "SafeOptix"
+$title.Text = "SafeCare"
 $title.Font = New-Object System.Drawing.Font("Segoe UI",24,[System.Drawing.FontStyle]::Bold)
 $title.ForeColor = "#0A84FF"
 $title.AutoSize = $true
@@ -144,18 +144,20 @@ function StartupSec {
 
 # ==================== ÇALIŞTIR ====================
 $run.Add_Click({
-    # Başlatmadan önce log ve progress sıfırla
+    $run.Enabled = $false
     $statusBox.Clear()
     $progressBar.Value = 0
 
-    # Seçimler kaybolacak, böylece kullanıcı tekrar seçim yapabilir
-    foreach($cb in $boxes){$cb.Checked = $false}
-    $cbRestore.Checked = $false
-
-    $run.Enabled = $false
+    # Seçili öğeleri al
     $allTasks = @()
     if($cbRestore.Checked){$allTasks+=$cbRestore}
     $allTasks += $boxes | Where-Object {$_.Checked}
+
+    if($allTasks.Count -eq 0){
+        [System.Windows.Forms.MessageBox]::Show("Lütfen bir işlem seçin!")
+        $run.Enabled = $true
+        return
+    }
 
     $taskCount = $allTasks.Count
     $current = 0
@@ -165,10 +167,11 @@ $run.Add_Click({
         $percent = [int](($current / $taskCount) * 100)
         $progressBar.Value = $percent
         Log("[$percent%] ▶ $($task.Text)")
+
         try{
             switch($task.Text){
                 "Geri Yükleme Noktası Oluştur (Önerilir)"{
-                    Checkpoint-Computer -Description "SafeOptix Öncesi Bakım" -RestorePointType "MODIFY_SETTINGS"
+                    Checkpoint-Computer -Description "SafeCare Öncesi Bakım" -RestorePointType "MODIFY_SETTINGS"
                     Log("✔ Geri yükleme noktası oluşturuldu")
                 }
                 "Sistem dosyalarını onar"{
@@ -195,9 +198,7 @@ $run.Add_Click({
                     }
                     Log("✔ Geçici dosyalar temizlendi")
                 }
-                "Disk temizleme"{ 
-                    Log("⚠ Disk temizleme artık manuel yapılmıyor, geçici dosyaları temizle ile birleşti")
-                }
+                "Disk temizleme"{ Log("⚠ Disk temizleme artık manuel yapılmıyor, geçici dosyaları temizle ile birleşti") }
                 "Diski optimize et"{
                     $vols=Get-Volume | Where-Object {$_.DriveType -eq 'Fixed'}
                     foreach($v in $vols){ try{ Optimize-Volume -DriveLetter $v.DriveLetter -ReTrim } catch{} }
