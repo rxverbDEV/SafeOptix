@@ -112,3 +112,5 @@ Tüm katkılar teşekkürle karşılanır.
 ---
 
 > ⚡ Not: SafeOptix hâlâ geliştirilen bir araçtır. Lütfen tüm işlemleri dikkatle ve kendi sorumluluğunuzda uygulayın.
+>
+> ⚠️. Uyarı: Optix ismi geçen herhangi bir şeyle bağlantısı yoktur.
