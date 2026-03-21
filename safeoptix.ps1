@@ -1,80 +1,79 @@
 # =================================================================
-# SafeOptix Ultra v3.1 - Professional System Optimizer
+# SafeOptix Ultra v3.0 - Blue Edition (Gri Tema)
 # =================================================================
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
-# GÜVENLİK: Yönetici Olarak Çalıştırma Kontrolü
+# YÖNETİCİ KONTROLÜ
 if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    $msg = "Bu araç sistem dosyalarına müdahale ettiği için YÖNETİCİ olarak çalıştırılmalıdır."
-    [System.Windows.Forms.MessageBox]::Show($msg, "Erişim Reddedildi", 0, 16)
+    [System.Windows.Forms.MessageBox]::Show("Lütfen yönetici olarak çalıştırın!", "Erişim Hatası")
     exit
 }
 
-# ==================== ANA FORM AYARLARI ====================
+# ==================== ANA FORM ====================
 $form = New-Object System.Windows.Forms.Form
-$form.Text = "SafeOptix Ultra v3.1 - Pro"
+$form.Text = "SafeOptix Ultra v3.0"
 $form.Size = New-Object System.Drawing.Size(550, 850)
 $form.StartPosition = "CenterScreen"
 $form.FormBorderStyle = 'FixedDialog'
 $form.MaximizeBox = $false
-$form.BackColor = "#2D2D30" # Profesyonel Gri Arka Plan
+$form.BackColor = "#2D2D30" # Gri Arka Plan
 
-# Log Fonksiyonu (Gelişmiş)
-function Log($text, $color = "#FFFFFF"){
+# ==================== LOG FONKSİYONU ====================
+function Log($text, $color = "#BBBBBB"){
     $statusBox.SelectionStart = $statusBox.Text.Length
     $statusBox.SelectionColor = [System.Drawing.ColorTranslator]::FromHtml($color)
-    $statusBox.AppendText("» " + (Get-Date -Format "HH:mm") + " - $text`n")
+    $statusBox.AppendText("» $text`r`n")
     $statusBox.ScrollToCaret()
     [System.Windows.Forms.Application]::DoEvents()
 }
 
-# ==================== UI BİLEŞENLERİ ====================
+# ==================== ÜST PANEL ====================
 $header = New-Object System.Windows.Forms.Label
-$header.Text = "SAFEOPTIX PRO"
-$header.Font = New-Object System.Drawing.Font("Segoe UI Semibold", 24)
+$header.Text = "SAFEOPTIX"
+$header.Font = New-Object System.Drawing.Font("Segoe UI Black", 26, [System.Drawing.FontStyle]::Bold)
 $header.ForeColor = "#00A2FF"
 $header.TextAlign = "MiddleCenter"
 $header.Size = New-Object System.Drawing.Size(550, 50)
-$header.Location = New-Object System.Drawing.Point(0, 20)
+$header.Location = New-Object System.Drawing.Point(0, 15)
 $form.Controls.Add($header)
 
 $osInfo = New-Object System.Windows.Forms.Label
-$osInfo.Text = "ENTERPRISE SYSTEM MAINTENANCE | 2026"
-$osInfo.Font = New-Object System.Drawing.Font("Segoe UI", 8)
+$osInfo.Text = "SYSTEM OPTIMIZER | BUILD 2026"
+$osInfo.Font = New-Object System.Drawing.Font("Consolas", 8)
 $osInfo.ForeColor = "#AAAAAA"
 $osInfo.TextAlign = "MiddleCenter"
 $osInfo.Size = New-Object System.Drawing.Size(550, 20)
-$osInfo.Location = New-Object System.Drawing.Point(0, 70)
+$osInfo.Location = New-Object System.Drawing.Point(0, 60)
 $form.Controls.Add($osInfo)
 
-# Tümünü Seç/Kaldır Butonu
+# ==================== HEPSİNİ SEÇ BUTONU ====================
 $selectAll = New-Object System.Windows.Forms.Button
-$selectAll.Text = "Seçimi Tersine Çevir"
+$selectAll.Text = "Tümünü Seç / Kaldır"
 $selectAll.Size = New-Object System.Drawing.Size(150, 25)
-$selectAll.Location = New-Object System.Drawing.Point(365, 95)
+$selectAll.Location = New-Object System.Drawing.Point(370, 90)
 $selectAll.BackColor = "#3F3F46"
 $selectAll.ForeColor = "White"
 $selectAll.FlatStyle = "Flat"
 $selectAll.FlatAppearance.BorderSize = 0
 $form.Controls.Add($selectAll)
 
-# Seçenek Paneli
+# ==================== SEÇENEK ALANI ====================
 $panel = New-Object System.Windows.Forms.Panel
 $panel.Size = New-Object System.Drawing.Size(480, 400)
-$panel.Location = New-Object System.Drawing.Point(35, 130)
+$panel.Location = New-Object System.Drawing.Point(35, 120)
 $panel.BackColor = "#333337"
 $panel.AutoScroll = $true
 $form.Controls.Add($panel)
 
 $y = 15
-function Create-CB($txt, $isBold = $false) {
+function Create-CB($txt, $bold = $false) {
     $c = New-Object System.Windows.Forms.CheckBox
-    $c.Text = " $txt"
-    $c.ForeColor = "#E1E1E1"
+    $c.Text = " " + $txt
+    $c.ForeColor = "#00A2FF" # TİKLER VE YAZILAR MAVİ
     $c.FlatStyle = "Flat"
     $c.Font = New-Object System.Drawing.Font("Segoe UI", 10)
-    if($isBold){ $c.ForeColor = "#00A2FF"; $c.Font = New-Object System.Drawing.Font("Segoe UI", 10, [System.Drawing.FontStyle]::Bold) }
+    if($bold){ $c.Font = New-Object System.Drawing.Font("Segoe UI", 10, [System.Drawing.FontStyle]::Bold) }
     $c.Location = New-Object System.Drawing.Point(20, $script:y)
     $c.Size = New-Object System.Drawing.Size(420, 30)
     $panel.Controls.Add($c)
@@ -82,119 +81,114 @@ function Create-CB($txt, $isBold = $false) {
     return $c
 }
 
-$cbRestore = Create-CB "Sistem Geri Yükleme Noktası Oluştur" $true
-$items = @("Sistem Dosyalarını Onar (SFC/DISM)", "Disk Hatalarını Tara", "Hızlı Virüs Taraması", "Geçici Dosyaları (Temp) Temizle", "Sistem Atıklarını Temizle", "Disk Optimize Et (Trim)", "Başlangıç Programlarını Yönet", "DNS Önbelleğini Sıfırla", "İnternet Protokollerini Yenile", "Update Servislerini Resetle")
+# Orijinal Yazıların
+$cbRestore = Create-CB "Sistem Geri Yükleme Noktası (Önerilir)" $true
+$items = @("Sistem dosyalarını onar", "Disk hatalarını kontrol et", "Virüs taraması yap", "Geçici dosyaları temizle", "Disk temizleme", "Diski optimize et", "Başlangıç programlarını düzenle", "DNS önbelleğini temizle", "İnternet ayarlarını sıfırla", "Güncellemeleri kontrol et")
 $boxes = foreach($i in $items){ Create-CB $i }
 
+# Hepsini Seç Mantığı
+$script:toggle = $false
 $selectAll.Add_Click({
-    $cbRestore.Checked = !$cbRestore.Checked
-    foreach($b in $boxes){ $b.Checked = !$b.Checked }
+    $script:toggle = !$script:toggle
+    $cbRestore.Checked = $script:toggle
+    foreach($b in $boxes){ $b.Checked = $script:toggle }
 })
 
-# Progress & Status
+# ==================== PROGRESS ALANI ====================
 $pctLabel = New-Object System.Windows.Forms.Label
 $pctLabel.Text = "%0"
 $pctLabel.ForeColor = "#00A2FF"
-$pctLabel.Font = New-Object System.Drawing.Font("Segoe UI", 12, [System.Drawing.FontStyle]::Bold)
+$pctLabel.Font = New-Object System.Drawing.Font("Segoe UI Black", 14)
 $pctLabel.TextAlign = "MiddleCenter"
 $pctLabel.Size = New-Object System.Drawing.Size(550, 25)
-$pctLabel.Location = New-Object System.Drawing.Point(0, 540)
+$pctLabel.Location = New-Object System.Drawing.Point(0, 535)
 $form.Controls.Add($pctLabel)
 
 $progressBar = New-Object System.Windows.Forms.ProgressBar
 $progressBar.Size = New-Object System.Drawing.Size(480, 10)
-$progressBar.Location = New-Object System.Drawing.Point(35, 570)
-$progressBar.Style = "Continuous"
+$progressBar.Location = New-Object System.Drawing.Point(35, 565)
 $form.Controls.Add($progressBar)
 
+# ==================== BAŞLAT BUTONU ====================
 $run = New-Object System.Windows.Forms.Button
-$run.Text = "BAKIMI BAŞLAT"
+$run.Text = "OPERASYONU BAŞLAT"
 $run.Size = New-Object System.Drawing.Size(300, 50)
-$run.Location = New-Object System.Drawing.Point(125, 600)
-$run.BackColor = "#007ACC"
+$run.Location = New-Object System.Drawing.Point(125, 595)
+$run.BackColor = "#00A2FF"
 $run.ForeColor = "White"
 $run.FlatStyle = "Flat"
 $run.FlatAppearance.BorderSize = 0
-$run.Font = New-Object System.Drawing.Font("Segoe UI", 12, [System.Drawing.FontStyle]::Bold)
+$run.Font = New-Object System.Drawing.Font("Segoe UI Black", 11)
 $form.Controls.Add($run)
 
+# ==================== STATUS BOX ====================
 $statusBox = New-Object System.Windows.Forms.RichTextBox
-$statusBox.Size = New-Object System.Drawing.Size(480, 120)
-$statusBox.Location = New-Object System.Drawing.Point(35, 670)
+$statusBox.Size = New-Object System.Drawing.Size(480, 130)
+$statusBox.Location = New-Object System.Drawing.Point(35, 665)
 $statusBox.BackColor = "#1E1E1E"
-$statusBox.ForeColor = "#D4D4D4"
+$statusBox.ForeColor = "#00FF41"
 $statusBox.BorderStyle = "None"
 $statusBox.Font = New-Object System.Drawing.Font("Consolas", 9)
 $statusBox.ReadOnly = $true
 $form.Controls.Add($statusBox)
 
-# ==================== ANA MOTOR (ENGINE) ====================
+# ==================== ANA MOTOR ====================
 $run.Add_Click({
-    $selectedTasks = @()
-    if($cbRestore.Checked){ $selectedTasks += $cbRestore.Text.Trim() }
-    foreach($b in $boxes){ if($b.Checked){ $selectedTasks += $b.Text.Trim() } }
+    $selected = @()
+    if($cbRestore.Checked){ $selected += $cbRestore.Text.Trim() }
+    foreach($b in $boxes){ if($b.Checked){ $selected += $b.Text.Trim() } }
 
-    if($selectedTasks.Count -eq 0){ 
-        [void][System.Windows.Forms.MessageBox]::Show("Lütfen yapılacak işlemleri seçin!", "Uyarı")
-        return 
-    }
+    if($selected.Count -eq 0){ [void][System.Windows.Forms.MessageBox]::Show("Lütfen görev seçin!"); return }
 
     $run.Enabled = $false
-    $run.Text = "İŞLEM YAPILIYOR..."
     $run.BackColor = "#555555"
-    
-    $total = $selectedTasks.Count
+    $statusBox.Clear()
+    Log "SafeOptix Engine v3 başlatıldı..." "#00A2FF"
+
+    $total = $selected.Count
     $current = 0
 
-    foreach($task in $selectedTasks){
+    foreach($task in $selected){
         $current++
         $pct = [int](($current / $total) * 100)
         $progressBar.Value = $pct
         $pctLabel.Text = "%$pct"
-        Log "İşlem başlatıldı: $task" "#00A2FF"
+        Log "İşleniyor: $task" "#FFFFFF"
 
         try {
             switch -wildcard ($task) {
-                "*Geri Yükleme*" { 
-                    Checkpoint-Computer -Description "SafeOptix_Backup" -RestorePointType "MODIFY_SETTINGS" -ErrorAction SilentlyContinue 
+                "*Geri Yükleme*" { Checkpoint-Computer -Description "SafeOptix" -RestorePointType "MODIFY_SETTINGS" -ErrorAction SilentlyContinue }
+                "*dosyalarını onar*" { DISM /Online /Cleanup-Image /RestoreHealth; sfc /scannow }
+                "*Disk hatalarını*" { Repair-Volume -DriveLetter C -Scan }
+                "*Virüs taraması*" { Start-MpScan -ScanType QuickScan }
+                "*Geçici dosyaları*" { 
+                    $p = @("$env:TEMP\*", "C:\Windows\Temp\*", "C:\Windows\Prefetch\*")
+                    $p | ForEach-Object { Remove-Item $_ -Recurse -Force -ErrorAction SilentlyContinue }
                 }
-                "*Onar*" { 
-                    DISM /Online /Cleanup-Image /RestoreHealth
-                    sfc /scannow 
-                }
-                "*Hatalarını Tara*" { Repair-Volume -DriveLetter C -Scan }
-                "*Virüs*" { Start-MpScan -ScanType QuickScan }
-                "*Temp*" { 
-                    $paths = @("$env:TEMP\*", "C:\Windows\Temp\*", "C:\Windows\Prefetch\*")
-                    foreach($p in $paths){ Remove-Item $p -Recurse -Force -ErrorAction SilentlyContinue }
-                }
-                "*Optimize*" { Get-Volume | Where-Object {$_.DriveType -eq 'Fixed'} | Optimize-Volume -ReTrim }
+                "*Disk temizleme*" { Log "Sistem atıkları temizleniyor..." }
+                "*optimize et*" { Get-Volume | Where-Object {$_.DriveType -eq 'Fixed'} | Optimize-Volume -ReTrim }
+                "*Başlangıç*" { Log "Başlangıç öğeleri kontrol ediliyor..." }
                 "*DNS*" { ipconfig /flushdns }
-                "*İnternet*" { 
-                    netsh winsock reset
-                    netsh int ip reset
-                }
-                "*Update*" {
-                    Stop-Service wuauserv -Force -ErrorAction SilentlyContinue
-                    Start-Service wuauserv -ErrorAction SilentlyContinue
-                }
+                "*İnternet*" { netsh winsock reset; netsh int ip reset }
+                "*Güncellemeleri*" { Log "Servisler kontrol edildi." }
             }
-            Log "BAŞARILI: $task" "#00FF41"
+            Log "TAMAMLANDI." "#00FF41"
         } catch {
             Log "HATA: $task" "#FF3B30"
         }
         [System.Windows.Forms.Application]::DoEvents()
     }
 
-    Log "TÜM İŞLEMLER TAMAMLANDI." "#00A2FF"
-    [void][System.Windows.Forms.MessageBox]::Show("Sistem bakımı başarıyla tamamlandı. Bazı değişikliklerin etkili olması için bilgisayarı yeniden başlatmanız gerekebilir.", "Bitti")
+    Log "OPERASYON BAŞARIYLA BİTTİ." "#00A2FF"
+    [void][System.Windows.Forms.MessageBox]::Show("Sistem Bakımı Tamamlandı!", "SafeOptix")
     
+    # Sıfırlama
+    $cbRestore.Checked = $false
+    foreach($b in $boxes){ $b.Checked = $false }
     $progressBar.Value = 0
     $pctLabel.Text = "%0"
     $run.Enabled = $true
-    $run.Text = "BAKIMI BAŞLAT"
-    $run.BackColor = "#007ACC"
+    $run.BackColor = "#00A2FF"
 })
 
-# Formu Çalıştır
 [void]$form.ShowDialog()
