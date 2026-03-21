@@ -57,7 +57,7 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 
 
-irm "https://raw.githubusercontent.com/<KULLANICI_ADI>/maintainx/main/maintainx.ps1" | iex
+irm "https://raw.githubusercontent.com/rxverbDEV/maintainx/main/maintainx.ps1" | iex
 
 4. Açılan GUI’de yapmak istediğiniz işlemleri tikleyin
 
