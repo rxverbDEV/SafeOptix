@@ -144,6 +144,14 @@ function StartupSec {
 
 # ==================== ÇALIŞTIR ====================
 $run.Add_Click({
+    # Başlatmadan önce log ve progress sıfırla
+    $statusBox.Clear()
+    $progressBar.Value = 0
+
+    # Seçimler kaybolacak, böylece kullanıcı tekrar seçim yapabilir
+    foreach($cb in $boxes){$cb.Checked = $false}
+    $cbRestore.Checked = $false
+
     $run.Enabled = $false
     $allTasks = @()
     if($cbRestore.Checked){$allTasks+=$cbRestore}
@@ -177,7 +185,7 @@ $run.Add_Click({
                 }
                 "Virüs taraması yap"{ Start-MpScan -ScanType FullScan; Log("✔ Virüs taraması tamamlandı") }
                 "Geçici dosyaları temizle"{
-                    $paths=@("$env:TEMP","C:\Windows\Temp","$env:LOCALAPPDATA\Temp")
+                    $paths=@("$env:TEMP","C:\Windows\Temp","C:\Windows\Prefetch","$env:USERPROFILE\Recent")
                     foreach($p in $paths){
                         if(Test-Path $p){
                             Get-ChildItem $p -Recurse -Force -ErrorAction SilentlyContinue | ForEach-Object {
@@ -187,7 +195,9 @@ $run.Add_Click({
                     }
                     Log("✔ Geçici dosyalar temizlendi")
                 }
-                "Disk temizleme"{ cleanmgr /sagerun:1; Log("✔ Disk temizleme tamamlandı") }
+                "Disk temizleme"{ 
+                    Log("⚠ Disk temizleme artık manuel yapılmıyor, geçici dosyaları temizle ile birleşti")
+                }
                 "Diski optimize et"{
                     $vols=Get-Volume | Where-Object {$_.DriveType -eq 'Fixed'}
                     foreach($v in $vols){ try{ Optimize-Volume -DriveLetter $v.DriveLetter -ReTrim } catch{} }
