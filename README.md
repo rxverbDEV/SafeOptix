@@ -57,7 +57,7 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 
 
-irm "https://raw.githubusercontent.com/rxverbDEV/maintainx/main/safeoptix.ps1" | iex
+irm "https://raw.githubusercontent.com/rxverbDEV/SafeOptix/main/safeoptix.ps1" | iex
 
 4. Açılan GUI’de yapmak istediğiniz işlemleri tikleyin
 
