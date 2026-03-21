@@ -3,36 +3,37 @@ Add-Type -AssemblyName System.Drawing
 
 # FORM
 $form = New-Object System.Windows.Forms.Form
-$form.Text = "Bakım"
+$form.Text = "MaintainX - Windows Bakım"
 $form.Size = New-Object System.Drawing.Size(520,640)
 $form.StartPosition = "CenterScreen"
 $form.FormBorderStyle = 'FixedDialog'
 $form.MaximizeBox = $false
-$form.BackColor = "#181818"
+$form.BackColor = "#1E1E1E"
 
 # BAŞLIK
 $title = New-Object System.Windows.Forms.Label
-$title.Text = "Windows Bakım"
-$title.Font = New-Object System.Drawing.Font("Segoe UI",16,[System.Drawing.FontStyle]::Bold)
-$title.ForeColor = "White"
+$title.Text = "Windows Bakım Aracı"
+$title.Font = New-Object System.Drawing.Font("Segoe UI",18,[System.Drawing.FontStyle]::Bold)
+$title.ForeColor = "#0A84FF"
 $title.AutoSize = $true
-$title.Location = New-Object System.Drawing.Point(150,15)
+$title.Location = New-Object System.Drawing.Point(100,15)
 $form.Controls.Add($title)
 
 # ALT METİN
 $subtitle = New-Object System.Windows.Forms.Label
 $subtitle.Text = "Yapmak istediğin işlemleri seç ve başlat."
-$subtitle.Font = New-Object System.Drawing.Font("Segoe UI",9)
+$subtitle.Font = New-Object System.Drawing.Font("Segoe UI",10)
 $subtitle.ForeColor = "Gray"
 $subtitle.AutoSize = $true
-$subtitle.Location = New-Object System.Drawing.Point(120,50)
+$subtitle.Location = New-Object System.Drawing.Point(120,55)
 $form.Controls.Add($subtitle)
 
 # PANEL (checkbox alanı)
 $panel = New-Object System.Windows.Forms.Panel
 $panel.Size = New-Object System.Drawing.Size(460,360)
 $panel.Location = New-Object System.Drawing.Point(30,90)
-$panel.BackColor = "#202020"
+$panel.BackColor = "#282828"
+$panel.BorderStyle = "FixedSingle"
 $form.Controls.Add($panel)
 
 # SEÇENEKLER
@@ -51,13 +52,12 @@ $items = @(
 
 $boxes = @()
 $y = 20
-
 foreach ($i in $items) {
     $cb = New-Object System.Windows.Forms.CheckBox
     $cb.Text = $i
     $cb.ForeColor = "White"
-    $cb.BackColor = "#202020"
-    $cb.Font = New-Object System.Drawing.Font("Segoe UI",9)
+    $cb.BackColor = "#282828"
+    $cb.Font = New-Object System.Drawing.Font("Segoe UI",10)
     $cb.Location = New-Object System.Drawing.Point(20,$y)
     $cb.AutoSize = $true
     $panel.Controls.Add($cb)
@@ -68,22 +68,23 @@ foreach ($i in $items) {
 # BAŞLAT BUTON
 $run = New-Object System.Windows.Forms.Button
 $run.Text = "Başlat"
-$run.Size = New-Object System.Drawing.Size(140,40)
+$run.Size = New-Object System.Drawing.Size(150,45)
 $run.Location = New-Object System.Drawing.Point(180,470)
 $run.BackColor = "#0A84FF"
 $run.ForeColor = "White"
 $run.FlatStyle = "Flat"
-$run.Font = New-Object System.Drawing.Font("Segoe UI",10,[System.Drawing.FontStyle]::Bold)
+$run.Font = New-Object System.Drawing.Font("Segoe UI",12,[System.Drawing.FontStyle]::Bold)
 $form.Controls.Add($run)
 
 # STATUS BOX
 $statusBox = New-Object System.Windows.Forms.TextBox
 $statusBox.Multiline = $true
 $statusBox.Size = New-Object System.Drawing.Size(460,90)
-$statusBox.Location = New-Object System.Drawing.Point(30,520)
+$statusBox.Location = New-Object System.Drawing.Point(30,530)
 $statusBox.BackColor = "#111111"
 $statusBox.ForeColor = "LightGray"
 $statusBox.ReadOnly = $true
+$statusBox.ScrollBars = "Vertical"
 $form.Controls.Add($statusBox)
 
 # STARTUP SEÇİM
@@ -94,7 +95,8 @@ function StartupSec {
     $f = New-Object System.Windows.Forms.Form
     $f.Text = "Başlangıç Programları"
     $f.Size = New-Object System.Drawing.Size(380,380)
-    $f.BackColor = "#202020"
+    $f.BackColor = "#282828"
+    $f.StartPosition = "CenterScreen"
 
     $list = New-Object System.Windows.Forms.CheckedListBox
     $list.Size = New-Object System.Drawing.Size(320,250)
@@ -125,69 +127,49 @@ function StartupSec {
 
 # ÇALIŞTIR
 $run.Add_Click({
-
     $statusBox.Clear()
     $statusBox.AppendText("Başlatılıyor...`r`n")
 
     foreach ($b in $boxes) {
         if ($b.Checked) {
-
             $statusBox.AppendText("→ $($b.Text)`r`n")
-
-            switch ($b.Text) {
-
-                "Sistem dosyalarını onar" {
-                    DISM /Online /Cleanup-Image /RestoreHealth
-                    sfc /scannow
-                }
-
-                "Disk hatalarını kontrol et" {
-                    Get-PSDrive -PSProvider FileSystem | % { chkdsk $_.Name /f /r /x }
-                }
-
-                "Virüs taraması yap" {
-                    Start-MpScan -ScanType FullScan
-                }
-
-                "Geçici dosyaları temizle" {
-                    $p=@("$env:TEMP","C:\Windows\Temp","$env:SystemRoot\Prefetch","$env:USERPROFILE\Recent")
-                    foreach($x in $p){Remove-Item "$x\*" -Recurse -Force -ErrorAction SilentlyContinue}
-                }
-
-                "Disk temizleme" {
-                    cleanmgr /sagerun:1
-                }
-
-                "Diski optimize et" {
-                    Get-PSDrive -PSProvider FileSystem | % { Optimize-Volume -DriveLetter $_.Name -ReTrim }
-                }
-
-                "Başlangıç programlarını düzenle" {
-                    $sec = StartupSec
-                    foreach ($s in $sec) {
-                        Get-CimInstance Win32_StartupCommand | Where-Object {$_.Name -eq $s} | Disable-CimInstance
+            try {
+                switch ($b.Text) {
+                    "Sistem dosyalarını onar" {
+                        $statusBox.AppendText("Sistem dosyaları kontrol ediliyor...`r`n")
+                        DISM /Online /Cleanup-Image /RestoreHealth
+                        sfc /scannow
+                    }
+                    "Disk hatalarını kontrol et" {
+                        foreach ($drv in Get-PSDrive -PSProvider FileSystem) {
+                            $statusBox.AppendText("→ Disk $($drv.Name) kontrol ediliyor...`r`n")
+                            chkdsk $drv.Name /f /r /x
+                        }
+                    }
+                    "Virüs taraması yap" { Start-MpScan -ScanType FullScan }
+                    "Geçici dosyaları temizle" {
+                        $paths=@("$env:TEMP","C:\Windows\Temp","$env:SystemRoot\Prefetch","$env:USERPROFILE\Recent")
+                        foreach($p in $paths){ try { Remove-Item "$p\*" -Recurse -ErrorAction SilentlyContinue } catch { $statusBox.AppendText("→ $p temizlenemedi.`r`n") } }
+                    }
+                    "Disk temizleme" { cleanmgr /sagerun:1 }
+                    "Diski optimize et" {
+                        foreach ($drv in Get-PSDrive -PSProvider FileSystem) { try { Optimize-Volume -DriveLetter $drv.Name -ReTrim } catch { $statusBox.AppendText("→ $($drv.Name) optimize edilemedi.`r`n") } }
+                    }
+                    "Başlangıç programlarını düzenle" {
+                        $sec = StartupSec
+                        foreach ($s in $sec) { try { Get-CimInstance Win32_StartupCommand | Where-Object {$_.Name -eq $s} | Disable-CimInstance } catch { $statusBox.AppendText("→ $s devre dışı bırakılamadı.`r`n") } }
+                    }
+                    "DNS önbelleğini temizle" { ipconfig /flushdns }
+                    "İnternet ayarlarını sıfırla" { netsh winsock reset; netsh int ip reset }
+                    "Güncellemeleri kontrol et" {
+                        try { Install-Module PSWindowsUpdate -Force -ErrorAction SilentlyContinue; Import-Module PSWindowsUpdate; Get-WindowsUpdate -AcceptAll -Install } catch { $statusBox.AppendText("→ Güncellemeler yüklenemedi.`r`n") }
                     }
                 }
-
-                "DNS önbelleğini temizle" {
-                    ipconfig /flushdns
-                }
-
-                "İnternet ayarlarını sıfırla" {
-                    netsh winsock reset
-                    netsh int ip reset
-                }
-
-                "Güncellemeleri kontrol et" {
-                    Install-Module PSWindowsUpdate -Force -ErrorAction SilentlyContinue
-                    Import-Module PSWindowsUpdate
-                    Get-WindowsUpdate -AcceptAll -Install
-                }
-            }
+            } catch { $statusBox.AppendText("→ $($b.Text) sırasında hata oluştu.`r`n") }
         }
     }
 
-    $statusBox.AppendText("`r`nBitti. Yeniden başlat önerilir.")
+    $statusBox.AppendText("`r`nBitti. Yeniden başlatmanız önerilir.")
     [System.Windows.Forms.MessageBox]::Show("Bakım tamamlandı.")
 })
 
