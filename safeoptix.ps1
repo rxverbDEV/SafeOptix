@@ -20,11 +20,35 @@ $form.FormBorderStyle = 'FixedDialog'
 $form.MaximizeBox = $false
 $form.BackColor = [System.Drawing.ColorTranslator]::FromHtml("#2D2D30")
 
-# ==================== LOG FONKSİYONU ====================
+# ==================== YARDIMCI FONKSİYONLAR ====================
+# Arayüzü dondurmadan ağır komutları çalıştıran motor
+function Run-ProcessResponsive($exe, $args) {
+    $proc = Start-Process $exe -ArgumentList $args -WindowStyle Hidden -PassThru
+    while (-not $proc.HasExited) {
+        [System.Windows.Forms.Application]::DoEvents()
+        Start-Sleep -Milliseconds 50 # İşlemciyi yormamak için kısa bekleme
+    }
+}
+
+# Animasyonlu ve pürüzsüz ilerleme çubuğu
+function Update-Progress($targetPct) {
+    $current = $progressBar.Value
+    if ($current -lt $targetPct) {
+        for ($i = $current; $i -le $targetPct; $i++) {
+            $progressBar.Value = $i
+            $pctLabel.Text = "%$i"
+            [System.Windows.Forms.Application]::DoEvents()
+            Start-Sleep -Milliseconds 15 # Akıcılık hızı
+        }
+    }
+}
+
+# Zaman damgalı log fonksiyonu
 function Log($text, $color = "#BBBBBB"){
+    $time = Get-Date -Format "HH:mm:ss"
     $statusBox.SelectionStart = $statusBox.Text.Length
     $statusBox.SelectionColor = [System.Drawing.ColorTranslator]::FromHtml($color)
-    $statusBox.AppendText("» $text`r`n")
+    $statusBox.AppendText("[$time] » $text`r`n")
     $statusBox.ScrollToCaret()
     [System.Windows.Forms.Application]::DoEvents()
 }
@@ -73,7 +97,7 @@ function Create-CB($txt, $bold = $false) {
     $c = New-Object System.Windows.Forms.CheckBox
     $c.Text = " " + $txt
     $c.ForeColor = [System.Drawing.ColorTranslator]::FromHtml("#D1D1D1")
-    $c.FlatStyle = "Standard" # Tik kutusunun düzgün görünmesi için Standard bırakıldı
+    $c.FlatStyle = "Standard"
     $c.Font = New-Object System.Drawing.Font("Segoe UI", 9)
     $c.Cursor = [System.Windows.Forms.Cursors]::Hand
     if($bold){ 
@@ -88,7 +112,7 @@ function Create-CB($txt, $bold = $false) {
 }
 
 $cbRestore = Create-CB "Sistem Geri Yükleme Noktası (Önerilir)" $true
-$items = @("Sistem dosyalarını onar (SFC & DISM)", "Disk hatalarını kontrol et", "Virüs taraması yap (Hızlı)", "Geçici dosyaları temizle (Güvenli)", "Disk temizleme", "Diski optimize et (TRIM/Defrag)", "Başlangıç programlarını düzenle", "DNS önbelleğini temizle", "İnternet ayarlarını sıfırla", "Güncellemeleri kontrol et")
+$items = @("Sistem dosyalarını onar (SFC & DISM)", "Disk hatalarını kontrol et", "Virüs taraması yap (Hızlı)", "Geçici dosyaları temizle (Temp, Prefetch, Recent)", "Disk temizleme", "Diski optimize et (TRIM/Defrag)", "Başlangıç programlarını düzenle", "DNS önbelleğini temizle", "İnternet ayarlarını sıfırla", "Güncellemeleri kontrol et")
 $boxes = foreach($i in $items){ Create-CB $i }
 
 # Hepsini Seç Logic
@@ -117,7 +141,7 @@ $form.Controls.Add($progressBar)
 
 # ==================== BAŞLAT BUTONU ====================
 $run = New-Object System.Windows.Forms.Button
-$run.Text = "OPERASYONU BAŞLAT"
+$run.Text = "BAKIMI BAŞLAT"
 $run.Size = New-Object System.Drawing.Size(300, 50)
 $run.Location = New-Object System.Drawing.Point(125, 595)
 $run.BackColor = [System.Drawing.ColorTranslator]::FromHtml("#00A2FF")
@@ -156,19 +180,23 @@ $run.Add_Click({
     $run.BackColor = [System.Drawing.ColorTranslator]::FromHtml("#555555")
     $statusBox.Clear()
     $form.Cursor = [System.Windows.Forms.Cursors]::WaitCursor
+    $progressBar.Value = 0
+    $pctLabel.Text = "%0"
     
     Log "SafeOptix Engine v3 başlatıldı..." "#00A2FF"
-    Log "NOT: Ağır işlemlerde pencere kısa süreliğine 'Yanıt Vermiyor' görünebilir, lütfen bekleyin." "#FFCC00"
 
     $total = $selected.Count
     $current = 0
 
     foreach($task in $selected){
         $current++
-        $pct = [int](($current / $total) * 100)
-        $progressBar.Value = $pct
-        $pctLabel.Text = "%$pct"
+        $targetPct = [int](($current / $total) * 100)
+        
         Log "İşleniyor: $task" "#FFFFFF"
+        
+        # İşlem başlamadan önce görsel olarak yarıya kadar ilerlet (yükleniyor hissi)
+        $midPct = [int]($progressBar.Value + (($targetPct - $progressBar.Value) / 3))
+        Update-Progress $midPct
 
         try {
             switch -wildcard ($task) {
@@ -177,27 +205,33 @@ $run.Add_Click({
                     Checkpoint-Computer -Description "SafeOptix_$(Get-Date -Format 'yyyyMMdd_HHmm')" -RestorePointType "MODIFY_SETTINGS" -ErrorAction SilentlyContinue 
                 }
                 "*dosyalarını onar*" { 
-                    $null = Start-Process "dism.exe" -ArgumentList "/Online /Cleanup-Image /RestoreHealth" -Wait -WindowStyle Hidden
-                    $null = Start-Process "sfc.exe" -ArgumentList "/scannow" -Wait -WindowStyle Hidden
+                    Run-ProcessResponsive "dism.exe" "/Online /Cleanup-Image /RestoreHealth"
+                    Run-ProcessResponsive "sfc.exe" "/scannow"
                 }
                 "*Disk hatalarını*" { $null = Repair-Volume -DriveLetter C -Scan -ErrorAction SilentlyContinue }
                 "*Virüs taraması*" { $null = Start-MpScan -ScanType QuickScan -ErrorAction SilentlyContinue }
                 "*Geçici dosyaları*" { 
-                    $paths = @("$env:TEMP\*", "$env:windir\Temp\*", "$env:windir\Prefetch\*")
+                    # İstenilen 4 özel temizlik konumu: %temp%, temp, prefetch, recent
+                    $paths = @(
+                        "$env:TEMP\*", 
+                        "$env:windir\Temp\*", 
+                        "$env:windir\Prefetch\*",
+                        "$env:APPDATA\Microsoft\Windows\Recent\*"
+                    )
                     foreach ($p in $paths) {
                         Remove-Item -Path $p -Recurse -Force -ErrorAction SilentlyContinue
                     }
                 }
-                "*Disk temizleme*" { $null = Start-Process "cleanmgr.exe" -ArgumentList "/sagerun:1 /autoclean" -Wait -WindowStyle Hidden }
+                "*Disk temizleme*" { Run-ProcessResponsive "cleanmgr.exe" "/sagerun:1 /autoclean" }
                 "*optimize et*" { $null = Optimize-Volume -DriveLetter C -ReTrim -ErrorAction SilentlyContinue }
                 "*Başlangıç*" { 
                     $null = Start-Process "taskmgr" -ArgumentList "/0 /startup"
-                    Log "Görev Yöneticisi Başlangıç sekmesi açıldı. (Güvenlik gereği manuel kapatın)" "#FFCC00"
+                    Log "Görev Yöneticisi Başlangıç sekmesi açıldı." "#FFCC00"
                 }
                 "*DNS*" { Clear-DnsClientCache -ErrorAction SilentlyContinue }
                 "*İnternet*" { 
-                    $null = Start-Process "netsh" -ArgumentList "winsock reset" -Wait -WindowStyle Hidden
-                    $null = Start-Process "netsh" -ArgumentList "int ip reset" -Wait -WindowStyle Hidden
+                    Run-ProcessResponsive "netsh.exe" "winsock reset"
+                    Run-ProcessResponsive "netsh.exe" "int ip reset"
                 }
                 "*Güncellemeleri*" { 
                     $null = Start-Process "control" -ArgumentList "update"
@@ -206,9 +240,11 @@ $run.Add_Click({
             }
             Log "TAMAMLANDI: İşlem başarılı." "#00FF41"
         } catch {
-            Log "HATA OLUŞTU: Sistem bu işlemi reddetti veya desteklemiyor." "#FF3B30"
+            Log "HATA OLUŞTU: Sistem bu işlemi atladı." "#FF3B30"
         }
-        [System.Windows.Forms.Application]::DoEvents()
+        
+        # İşlem bittiğinde ilerlemeyi hedef değere pürüzsüzce tamamla
+        Update-Progress $targetPct
     }
 
     # BİTİŞ İŞLEMLERİ
